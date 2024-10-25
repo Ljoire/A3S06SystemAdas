@@ -1,0 +1,16 @@
+[1/6] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/app_main.c.obj
+C:/Users/ljoire/OneDrive - Groupe SEB/Bureau/ESP32SPI/ESP32_SPI_Communication/sender/main/app_main.c: In function 'app_main':
+C:/Users/ljoire/OneDrive - Groupe SEB/Bureau/ESP32SPI/ESP32_SPI_Communication/sender/main/app_main.c:302:13: warning: unused variable 'i' [-Wunused-variable]
+  302 |         int i;
+      |             ^
+[2/6] Linking C static library esp-idf\main\libmain.a
+[3/6] Generating ld/sections.ld
+[4/6] Linking CXX executable spi_slave_sender.elf
+[5/6] Generating binary image from built executable
+esptool.py v4.8.1
+Creating esp32s3 image...
+Merged 2 ELF sections
+Successfully created esp32s3 image.
+Generated C:/Users/ljoire/OneDrive - Groupe SEB/Bureau/ESP32SPI/ESP32_SPI_Communication/sender/build/spi_slave_sender.bin
+[6/6] cmd.exe /C "cd /D "C:\Users\ljoire\OneDrive - Groupe SEB\Bureau\ESP32SPI\ESP32_SPI_Communication\sender\build\esp-idf\esptool_py" && C:\Users\ljoire\.espressif\python_env\idf5.3_py3.11_env\Scripts\python.exe C:/Users/ljoire/esp/v5.3.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app "C:/Users/ljoire/OneDrive - Groupe SEB/Bureau/ESP32SPI/ESP32_SPI_Communication/sender/build/partition_table/partition-table.bin" "C:/Users/ljoire/OneDrive - Groupe SEB/Bureau/ESP32SPI/ESP32_SPI_Communication/sender/build/spi_slave_sender.bin""
+spi_slave_sender.bin binary size 0x3ec30 bytes. Smallest app partition is 0x100000 bytes. 0xc13d0 bytes (75%) free.
