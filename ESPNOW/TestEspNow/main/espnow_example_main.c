@@ -30,6 +30,11 @@
 #include "esp_crc.h"
 #include "espnow_example.h"
 
+/*********************** CUSTOM DEFINE*/
+
+#define FRAMELEN 18
+
+
 #define ESPNOW_MAXDELAY 512
 
 static const char *TAG = "espnow_example";
@@ -347,11 +352,11 @@ static esp_err_t example_espnow_init(void)
     send_param->unicast = false;
     send_param->broadcast = true;
     send_param->state = 0;
-    send_param->magic = esp_random();
+    send_param->magic = 4;//put the ESPS3 as receiver
     send_param->count = CONFIG_ESPNOW_SEND_COUNT;
     send_param->delay = CONFIG_ESPNOW_SEND_DELAY;
-    send_param->len = CONFIG_ESPNOW_SEND_LEN;
-    send_param->buffer = malloc(CONFIG_ESPNOW_SEND_LEN);
+    send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; modif a 18
+    send_param->buffer = malloc(FRAMELEN);
     if (send_param->buffer == NULL) {
         ESP_LOGE(TAG, "Malloc send buffer fail");
         free(send_param);

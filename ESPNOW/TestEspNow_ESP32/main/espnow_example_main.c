@@ -30,6 +30,10 @@
 #include "esp_crc.h"
 #include "espnow_example.h"
 
+/*********************** CUSTOM DEFINE*/
+
+#define FRAMELEN 18
+
 #define ESPNOW_MAXDELAY 512
 
 static const char *TAG = "espnow_example";
@@ -144,7 +148,9 @@ uint8_t mes2send[8] = "totootot";
 void example_espnow_data_prepare(example_espnow_send_param_t *send_param)  //
 {
     example_espnow_data_t *buf = (example_espnow_data_t *)send_param->buffer;
+    uint8_t try = send_param->len;
 
+    printf("len send param %d sizeof struct %d \n",try, sizeof(example_espnow_data_t));
     assert(send_param->len >= sizeof(example_espnow_data_t));
 // definit type si l'on transmet en broadcast ou en unicast en testant dest_mac
     buf->type = IS_BROADCAST_ADDR(send_param->dest_mac) ? EXAMPLE_ESPNOW_DATA_BROADCAST : EXAMPLE_ESPNOW_DATA_UNICAST;
@@ -351,11 +357,11 @@ static esp_err_t example_espnow_init(void)
     send_param->unicast = false;
     send_param->broadcast = true;
     send_param->state = 0;
-    send_param->magic = esp_random();
+    send_param->magic = 100;//put the ESP32 as sender
     send_param->count = CONFIG_ESPNOW_SEND_COUNT;
     send_param->delay = CONFIG_ESPNOW_SEND_DELAY;
-    send_param->len = CONFIG_ESPNOW_SEND_LEN;
-    send_param->buffer = malloc(CONFIG_ESPNOW_SEND_LEN);
+    send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; //modif de len a 18
+    send_param->buffer = malloc(FRAMELEN);
     if (send_param->buffer == NULL) {
         ESP_LOGE(TAG, "Malloc send buffer fail");
         free(send_param);
