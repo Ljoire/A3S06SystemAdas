@@ -33,7 +33,7 @@
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
-
+#define MAX_PAYLOAD_SIZE 8
 
 #define ESPNOW_MAXDELAY 512
 
@@ -123,8 +123,8 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
     }
 }
 
-/* Parse received ESPNOW data. */
-int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint32_t *magic)
+/* Parse received ESPNOW data. return the state for know how to deal with it */
+int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint32_t *magic, uint8_t *payload, uint8_t payload_len)
 {
     example_espnow_data_t *buf = (example_espnow_data_t *)data;
     uint16_t crc, crc_cal = 0;
@@ -133,13 +133,27 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
         ESP_LOGE(TAG, "Receive ESPNOW data too short, len:%d", data_len);
         return -1;
     }
-
+    
+    
     *state = buf->state;
     *seq = buf->seq_num;
     *magic = buf->magic;
+    //*payload = buf->payload;//assign to it
+    for (int i = 0; i < sizeof(buf->payload); i++) {
+        printf("%02X ", buf->payload[i]);
+    }
+    printf(" is the data parsed inside the parser \n");
+
+    // Copy the payload with boundary checking
+    //printf("%d len", payload_len)
+    size_t copy_len = (payload_len < sizeof(buf->payload)) ? payload_len : sizeof(buf->payload);
+    memcpy(payload, buf->payload, copy_len);
+
     crc = buf->crc;
     buf->crc = 0;
     crc_cal = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, data_len);
+
+
 
     if (crc_cal == crc) {
         return buf->type;
@@ -171,6 +185,8 @@ static void example_espnow_task(void *pvParameter)
     uint8_t recv_state = 0;
     uint16_t recv_seq = 0;
     uint32_t recv_magic = 0;
+    //the 4 last byte pointed on some memory have to check the pointers and mem allocations
+    uint8_t recv_payload[MAX_PAYLOAD_SIZE];//data of the frames became OK when put an U16
     bool is_broadcast = false;
     int ret;
 
@@ -179,13 +195,14 @@ static void example_espnow_task(void *pvParameter)
 
     /* Start sending broadcast ESPNOW data. */
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
+    
     if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
         ESP_LOGE(TAG, "Send error");
         example_espnow_deinit(send_param);
         vTaskDelete(NULL);
     }
-
     while (xQueueReceive(s_example_espnow_queue, &evt, portMAX_DELAY) == pdTRUE) {
+        ESP_LOGI(TAG, "Here nooverflow");
         switch (evt.id) {
             case EXAMPLE_ESPNOW_SEND_CB:
             {
@@ -229,7 +246,7 @@ static void example_espnow_task(void *pvParameter)
             {
                 example_espnow_event_recv_cb_t *recv_cb = &evt.info.recv_cb;
 
-                ret = example_espnow_data_parse(recv_cb->data, recv_cb->data_len, &recv_state, &recv_seq, &recv_magic);
+                ret = example_espnow_data_parse(recv_cb->data, recv_cb->data_len, &recv_state, &recv_seq, &recv_magic,recv_payload,sizeof(recv_payload));
                 free(recv_cb->data);
                 if (ret == EXAMPLE_ESPNOW_DATA_BROADCAST) {
                     ESP_LOGI(TAG, "Receive %dth broadcast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
@@ -287,7 +304,11 @@ static void example_espnow_task(void *pvParameter)
                 }
                 else if (ret == EXAMPLE_ESPNOW_DATA_UNICAST) {
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
-
+                    //printf("The magic number on it is :%ld",recv_magic);
+                    for (int i = 0; i < sizeof(recv_payload); i++) {
+                        printf("%02X ", recv_payload[i]);
+                    }
+                    printf(" is the data parsed outside the functions \n");
                     /* If receive unicast ESPNOW data, also stop sending broadcast ESPNOW data. */
                     send_param->broadcast = false;
                 }
@@ -366,8 +387,8 @@ static esp_err_t example_espnow_init(void)
     }
     memcpy(send_param->dest_mac, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
     example_espnow_data_prepare(send_param);
-
-    xTaskCreate(example_espnow_task, "example_espnow_task", 2048, send_param, 4, NULL);
+// put from 2048 to 3062 cancel the stack overflow
+    xTaskCreate(example_espnow_task, "example_espnow_task", 3062, send_param, 4, NULL); 
 
     return ESP_OK;
 }
@@ -382,7 +403,7 @@ static void example_espnow_deinit(example_espnow_send_param_t *send_param)
 
 void app_main(void)
 {
-    // Initialize NVS
+    printf("Np overflowed here");// Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK( nvs_flash_erase() );
