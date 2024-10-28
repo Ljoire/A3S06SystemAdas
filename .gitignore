@@ -1,6 +1,9 @@
 .config
 *.o
 *.pyc
+*c.obj
+*.json
+./build/*
 
 # gtags
 GTAGS

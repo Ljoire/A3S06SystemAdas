@@ -34,6 +34,7 @@
 
 #define FRAMELEN 18
 #define MAX_PAYLOAD_SIZE 8
+#define CUSTOM_SEND_COUNT 2
 
 #define ESPNOW_MAXDELAY 512
 
@@ -138,14 +139,15 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
     *state = buf->state;
     *seq = buf->seq_num;
     *magic = buf->magic;
-    //*payload = buf->payload;//assign to it
+    /*******DEBUG
+    payload = buf->payload;//assign to it
     for (int i = 0; i < sizeof(buf->payload); i++) {
         printf("%02X ", buf->payload[i]);
     }
     printf(" is the data parsed inside the parser \n");
-
     // Copy the payload with boundary checking
-    //printf("%d len", payload_len)
+    //printf("%d len", payload_len);*/
+
     size_t copy_len = (payload_len < sizeof(buf->payload)) ? payload_len : sizeof(buf->payload);
     memcpy(payload, buf->payload, copy_len);
 
@@ -202,7 +204,6 @@ static void example_espnow_task(void *pvParameter)
         vTaskDelete(NULL);
     }
     while (xQueueReceive(s_example_espnow_queue, &evt, portMAX_DELAY) == pdTRUE) {
-        ESP_LOGI(TAG, "Here nooverflow");
         switch (evt.id) {
             case EXAMPLE_ESPNOW_SEND_CB:
             {
@@ -286,6 +287,7 @@ static void example_espnow_task(void *pvParameter)
                         if (send_param->unicast == false && send_param->magic >= recv_magic) {
                     	    ESP_LOGI(TAG, "Start sending unicast data");
                     	    ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
+                            printf("we passed here \n");
 
                     	    /* Start sending unicast ESPNOW data. */
                             memcpy(send_param->dest_mac, recv_cb->mac_addr, ESP_NOW_ETH_ALEN);
@@ -308,7 +310,7 @@ static void example_espnow_task(void *pvParameter)
                     for (int i = 0; i < sizeof(recv_payload); i++) {
                         printf("%02X ", recv_payload[i]);
                     }
-                    printf(" is the data parsed outside the functions \n");
+                    printf(" is the data parsed \n");
                     /* If receive unicast ESPNOW data, also stop sending broadcast ESPNOW data. */
                     send_param->broadcast = false;
                 }
@@ -374,7 +376,7 @@ static esp_err_t example_espnow_init(void)
     send_param->broadcast = true;
     send_param->state = 0;
     send_param->magic = 4;//put the ESPS3 as receiver
-    send_param->count = CONFIG_ESPNOW_SEND_COUNT;
+    send_param->count = CUSTOM_SEND_COUNT;//CONFIG_ESPNOW_SEND_COUNT;//down to 25
     send_param->delay = CONFIG_ESPNOW_SEND_DELAY;
     send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; modif a 18
     send_param->buffer = malloc(FRAMELEN);
@@ -387,8 +389,8 @@ static esp_err_t example_espnow_init(void)
     }
     memcpy(send_param->dest_mac, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
     example_espnow_data_prepare(send_param);
-// put from 2048 to 3062 cancel the stack overflow
-    xTaskCreate(example_espnow_task, "example_espnow_task", 3062, send_param, 4, NULL); 
+// put from 2048 to 3062 cancel the stack overflow no overflow with 2064
+    xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL); 
 
     return ESP_OK;
 }
@@ -403,7 +405,6 @@ static void example_espnow_deinit(example_espnow_send_param_t *send_param)
 
 void app_main(void)
 {
-    printf("Np overflowed here");// Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK( nvs_flash_erase() );
