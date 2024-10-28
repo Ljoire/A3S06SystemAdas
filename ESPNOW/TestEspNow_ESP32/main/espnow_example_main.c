@@ -33,6 +33,8 @@
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
+#define MAX_PAYLOAD_SIZE 8
+#define CUSTOM_SEND_COUNT 2
 
 #define ESPNOW_MAXDELAY 512
 
@@ -82,7 +84,9 @@ static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_
         ESP_LOGW(TAG, "Send send queue fail");
     }
 }
-
+/* Traitment function of ESPNOW. The functions threat the data, if it was added on the peer list/
+*  Traitment of the error case and liberate the malloc if data received NOK
+*/
 static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len)
 {
     example_espnow_event_t evt;
@@ -104,6 +108,7 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
     } else {
         ESP_LOGD(TAG, "Receive unicast ESPNOW data");
     }
+
     evt.id = EXAMPLE_ESPNOW_RECV_CB;
     memcpy(recv_cb->mac_addr, mac_addr, ESP_NOW_ETH_ALEN);
     recv_cb->data = malloc(len);
@@ -119,8 +124,8 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
     }
 }
 
-/* Parse received ESPNOW data. */
-int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint32_t *magic)
+/* Parse received ESPNOW data. return the state for know how to deal with it */
+int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint32_t *magic, uint8_t *payload, uint8_t payload_len)
 {
     example_espnow_data_t *buf = (example_espnow_data_t *)data;
     uint16_t crc, crc_cal = 0;
@@ -129,13 +134,28 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
         ESP_LOGE(TAG, "Receive ESPNOW data too short, len:%d", data_len);
         return -1;
     }
-
+    
+    
     *state = buf->state;
     *seq = buf->seq_num;
     *magic = buf->magic;
+    /*******DEBUG
+    payload = buf->payload;//assign to it
+    for (int i = 0; i < sizeof(buf->payload); i++) {
+        printf("%02X ", buf->payload[i]);
+    }
+    printf(" is the data parsed inside the parser \n");
+    // Copy the payload with boundary checking
+    //printf("%d len", payload_len);*/
+
+    size_t copy_len = (payload_len < sizeof(buf->payload)) ? payload_len : sizeof(buf->payload);
+    memcpy(payload, buf->payload, copy_len);
+
     crc = buf->crc;
     buf->crc = 0;
     crc_cal = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, data_len);
+
+
 
     if (crc_cal == crc) {
         return buf->type;
@@ -145,16 +165,13 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
 }
 uint8_t mes2send[8] = "totootot";
 /* Prepare ESPNOW data to be sent. */
-void example_espnow_data_prepare(example_espnow_send_param_t *send_param)  //
+void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
 {
     example_espnow_data_t *buf = (example_espnow_data_t *)send_param->buffer;
-    uint8_t try = send_param->len;
 
-    printf("len send param %d sizeof struct %d \n",try, sizeof(example_espnow_data_t));
     assert(send_param->len >= sizeof(example_espnow_data_t));
-// definit type si l'on transmet en broadcast ou en unicast en testant dest_mac
+
     buf->type = IS_BROADCAST_ADDR(send_param->dest_mac) ? EXAMPLE_ESPNOW_DATA_BROADCAST : EXAMPLE_ESPNOW_DATA_UNICAST;
-  
     buf->state = send_param->state;
     buf->seq_num = s_example_espnow_seq[buf->type]++;
     buf->crc = 0;
@@ -163,7 +180,7 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param)  //
     //esp_fill_random(buf->payload, send_param->len - sizeof(example_espnow_data_t));
     /* Copie du payload dans la structure */
     memcpy(buf->payload, mes2send, sizeof(mes2send));
-    buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
+   buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 }
 
 static void example_espnow_task(void *pvParameter)
@@ -172,6 +189,8 @@ static void example_espnow_task(void *pvParameter)
     uint8_t recv_state = 0;
     uint16_t recv_seq = 0;
     uint32_t recv_magic = 0;
+    //the 4 last byte pointed on some memory have to check the pointers and mem allocations
+    uint8_t recv_payload[MAX_PAYLOAD_SIZE];//data of the frames became OK when put an U16
     bool is_broadcast = false;
     int ret;
 
@@ -180,30 +199,28 @@ static void example_espnow_task(void *pvParameter)
 
     /* Start sending broadcast ESPNOW data. */
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
+    
     if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
         ESP_LOGE(TAG, "Send error");
         example_espnow_deinit(send_param);
         vTaskDelete(NULL);
     }
-
-        while (xQueueReceive(s_example_espnow_queue, &evt, portMAX_DELAY) == pdTRUE) {
+    while (xQueueReceive(s_example_espnow_queue, &evt, portMAX_DELAY) == pdTRUE) {
         switch (evt.id) {
             case EXAMPLE_ESPNOW_SEND_CB:
             {
                 example_espnow_event_send_cb_t *send_cb = &evt.info.send_cb;
                 is_broadcast = IS_BROADCAST_ADDR(send_cb->mac_addr);
 
-                ESP_LOGD(TAG, "Send broadcast 1st case evt.id data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
+                ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
 
                 if (is_broadcast && (send_param->broadcast == false)) {
                     break;
                 }
-                /*
-                    Si en mode unicast on ammorce un compteur pour ne pas envoyer en permaneneec 
-                */
+
                 if (!is_broadcast) {
                     send_param->count--;
-                    if (send_param->count == 0) {
+                    if (send_param->count == 0) {//si on a fini de transmettre on passe l'ACK (magic) en low
                         ESP_LOGI(TAG, "Send done");
                         example_espnow_deinit(send_param);
                         vTaskDelete(NULL);
@@ -232,7 +249,7 @@ static void example_espnow_task(void *pvParameter)
             {
                 example_espnow_event_recv_cb_t *recv_cb = &evt.info.recv_cb;
 
-                ret = example_espnow_data_parse(recv_cb->data, recv_cb->data_len, &recv_state, &recv_seq, &recv_magic);
+                ret = example_espnow_data_parse(recv_cb->data, recv_cb->data_len, &recv_state, &recv_seq, &recv_magic,recv_payload,sizeof(recv_payload));
                 free(recv_cb->data);
                 if (ret == EXAMPLE_ESPNOW_DATA_BROADCAST) {
                     ESP_LOGI(TAG, "Receive %dth broadcast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
@@ -269,11 +286,11 @@ static void example_espnow_task(void *pvParameter)
                         /* The device which has the bigger magic number sends ESPNOW data, the other one
                          * receives ESPNOW data.
                          */
-                        //si le magic number est plus grand que l'autre ESP alors on envoie les données
                         if (send_param->unicast == false && send_param->magic >= recv_magic) {
                     	    ESP_LOGI(TAG, "Start sending unicast data");
                     	    ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
-                            
+                            printf("we passed here \n");
+
                     	    /* Start sending unicast ESPNOW data. */
                             memcpy(send_param->dest_mac, recv_cb->mac_addr, ESP_NOW_ETH_ALEN);
                             example_espnow_data_prepare(send_param);
@@ -282,7 +299,7 @@ static void example_espnow_task(void *pvParameter)
                                 example_espnow_deinit(send_param);
                                 vTaskDelete(NULL);
                             }
-                            else {// passage en mode unicast
+                            else {
                                 send_param->broadcast = false;
                                 send_param->unicast = true;
                             }
@@ -291,7 +308,11 @@ static void example_espnow_task(void *pvParameter)
                 }
                 else if (ret == EXAMPLE_ESPNOW_DATA_UNICAST) {
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
-
+                    //printf("The magic number on it is :%ld",recv_magic);
+                    for (int i = 0; i < sizeof(recv_payload); i++) {
+                        printf("%02X ", recv_payload[i]);
+                    }
+                    printf(" is the data parsed \n");
                     /* If receive unicast ESPNOW data, also stop sending broadcast ESPNOW data. */
                     send_param->broadcast = false;
                 }
@@ -330,7 +351,6 @@ static esp_err_t example_espnow_init(void)
 
     /* Add broadcast peer information to peer list. */
     esp_now_peer_info_t *peer = malloc(sizeof(esp_now_peer_info_t));
-    printf("attributions memoire pour les infor peer\n");
     if (peer == NULL) {
         ESP_LOGE(TAG, "Malloc peer information fail");
         vSemaphoreDelete(s_example_espnow_queue);
@@ -357,10 +377,10 @@ static esp_err_t example_espnow_init(void)
     send_param->unicast = false;
     send_param->broadcast = true;
     send_param->state = 0;
-    send_param->magic = 100;//put the ESP32 as sender
-    send_param->count = CONFIG_ESPNOW_SEND_COUNT;
+    send_param->magic = 4;//put the ESPS3 as receiver
+    send_param->count = CUSTOM_SEND_COUNT;//CONFIG_ESPNOW_SEND_COUNT;//down to 25
     send_param->delay = CONFIG_ESPNOW_SEND_DELAY;
-    send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; //modif de len a 18
+    send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; modif a 18
     send_param->buffer = malloc(FRAMELEN);
     if (send_param->buffer == NULL) {
         ESP_LOGE(TAG, "Malloc send buffer fail");
@@ -371,8 +391,8 @@ static esp_err_t example_espnow_init(void)
     }
     memcpy(send_param->dest_mac, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
     example_espnow_data_prepare(send_param);
-
-    xTaskCreate(example_espnow_task, "example_espnow_task", 2048, send_param, 4, NULL);
+// put from 2048 to 3062 cancel the stack overflow no overflow with 2064
+    xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL); 
 
     return ESP_OK;
 }
@@ -387,7 +407,6 @@ static void example_espnow_deinit(example_espnow_send_param_t *send_param)
 
 void app_main(void)
 {
-    // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK( nvs_flash_erase() );
@@ -399,4 +418,5 @@ void app_main(void)
     printf("wifi initialized");
     example_espnow_init();
     printf("ESP now init");
+    
 }

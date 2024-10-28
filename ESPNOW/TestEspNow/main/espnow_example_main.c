@@ -163,7 +163,7 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
 
     return -1;
 }
-
+uint8_t mes2send[8] = "totootot";
 /* Prepare ESPNOW data to be sent. */
 void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
 {
@@ -177,8 +177,10 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
     buf->crc = 0;
     buf->magic = send_param->magic;
     /* Fill all remaining bytes after the data with random values */
-    esp_fill_random(buf->payload, send_param->len - sizeof(example_espnow_data_t));
-    buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
+    //esp_fill_random(buf->payload, send_param->len - sizeof(example_espnow_data_t));
+    /* Copie du payload dans la structure */
+    memcpy(buf->payload, mes2send, sizeof(mes2send));
+   buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 }
 
 static void example_espnow_task(void *pvParameter)
@@ -218,7 +220,7 @@ static void example_espnow_task(void *pvParameter)
 
                 if (!is_broadcast) {
                     send_param->count--;
-                    if (send_param->count == 0) {
+                    if (send_param->count == 0) {//si on a fini de transmettre on passe l'ACK (magic) en low
                         ESP_LOGI(TAG, "Send done");
                         example_espnow_deinit(send_param);
                         vTaskDelete(NULL);
