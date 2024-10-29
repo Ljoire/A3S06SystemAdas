@@ -9,7 +9,8 @@
     },
     "idf.espIdfPathWin": "C:\\Users\\ljoire\\esp\\v5.3.1\\esp-idf",
     "idf.openOcdConfigs": [
-        "board/esp32-bridge.cfg"
+        "interface/ftdi/esp32_devkitj_v1.cfg",
+        "target/esp32-solo-1.cfg"
     ],
     "idf.portWin": "COM9",
     "idf.pythonBinPathWin": "C:\\Users\\ljoire\\.espressif\\python_env\\idf5.3_py3.11_env\\Scripts\\python.exe",

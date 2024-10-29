@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/ljoire/OneDrive - Groupe SEB/Bureau/TestEspNow_ESP32/main
+# Install script for directory: C:/Users/ljoire/OneDrive - Groupe SEB/Bureau/CodeADAS/ESPNOW/TestEspNow_ESP32/main
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
