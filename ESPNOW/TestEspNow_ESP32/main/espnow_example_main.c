@@ -240,13 +240,19 @@ static void example_espnow_task(void *pvParameter)
                 {
                     send_param->count--;
                     //if transmit is over we put pingpong at false and uncount the frame counter
-                    if (send_param->count == 0) 
-                    {
-                        send_param->pingpong = false;
-                        ESP_LOGI(TAG, "send done");
+                    if(Frame_counter == 0){
+                        ESP_LOGI(TAG, "Frame sent turn off the frame");
                         example_espnow_deinit(send_param);
                         vTaskDelete(NULL);
                     }
+                    if (send_param->count == 0) 
+                    {
+                        send_param->pingpong = false;
+                        Frame_counter--;
+                        printf("pass from sender to receiver Frame_counter = %llh Count= %llh\n",Frame_counter,send_param->count);
+                        break;
+                    }
+
                 }
                 
 
@@ -309,7 +315,8 @@ static void example_espnow_task(void *pvParameter)
                         /* The device which has the bigger magic number sends ESPNOW data, the other one
                          * receives ESPNOW data.
                          */
-                        if (send_param->unicast == false && send_param->pingpong == true) {
+                        if (send_param->unicast == false && send_param->magic >= recv_magic) {
+                            send_param->pingpong = true;
                     	    ESP_LOGI(TAG, "Start sending unicast data");
                     	    ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
                             printf("we passed here \n");
@@ -317,6 +324,8 @@ static void example_espnow_task(void *pvParameter)
                     	    /* Start sending unicast ESPNOW data. */
                             memcpy(send_param->dest_mac, recv_cb->mac_addr, ESP_NOW_ETH_ALEN);
                             example_espnow_data_prepare(send_param);
+
+                            //this if SEND THE FUNCTIONS 
                             if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
                                 ESP_LOGE(TAG, "Send error");
                                 example_espnow_deinit(send_param);
@@ -332,21 +341,42 @@ static void example_espnow_task(void *pvParameter)
                 else if (ret == EXAMPLE_ESPNOW_DATA_UNICAST) {
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
                     
-                    
-                    //if transmit is over we put pingpong at true for sending data and uncount the frame counter
-                    Receiver_counter--;
-                    if(Frame_counter == 0){
-                        ESP_LOGI(TAG, "receive done");
-                        example_espnow_deinit(send_param);
-                        vTaskDelete(NULL);
-                    }
-                    
                     for (int i = 0; i < sizeof(recv_payload); i++) {
                         printf("%02X ", recv_payload[i]);
                     }
                     printf(" is the data parsed \n");
                     /* If receive unicast ESPNOW data, also stop sending broadcast ESPNOW data. */
                     send_param->broadcast = false;
+                    
+                    //if transmit is over we put pingpong at true for sending data and uncount the frame counter
+                    Receiver_counter--;
+                    if(Receiver_counter == 0){
+                        printf("Receive all the data");
+
+                        //testing if the frame is finished
+                        Frame_counter--;
+                        if(Frame_counter == 0){
+                            ESP_LOGI(TAG, "receive done");
+                            example_espnow_deinit(send_param);
+                            vTaskDelete(NULL);
+                            }
+                        else{//pass on sender
+                            send_param->pingpong = true;
+                            send_param->count = CUSTOM_SEND_COUNT;// we refill the counter for the send mode 
+                            memcpy(send_param->dest_mac, recv_cb->mac_addr, ESP_NOW_ETH_ALEN);
+                            example_espnow_data_prepare(send_param);
+
+                            //this if SEND THE FUNCTIONS 
+                            if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
+                                ESP_LOGE(TAG, "Send error");
+                                example_espnow_deinit(send_param);
+                                vTaskDelete(NULL);
+                            } 
+
+                        }
+                    }
+
+                    
                 }
                 else {
                     ESP_LOGI(TAG, "Receive error data from: "MACSTR"", MAC2STR(recv_cb->mac_addr));
