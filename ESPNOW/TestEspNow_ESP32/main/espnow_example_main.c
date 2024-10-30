@@ -36,6 +36,8 @@
 #define MAX_PAYLOAD_SIZE 8
 #define CUSTOM_SEND_COUNT 2
 
+#define FRAMECOUNTER 5
+
 #define ESPNOW_MAXDELAY 512
 
 static const char *TAG = "espnow_example";
@@ -78,6 +80,7 @@ static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_
     }
 
     evt.id = EXAMPLE_ESPNOW_SEND_CB;
+
     memcpy(send_cb->mac_addr, mac_addr, ESP_NOW_ETH_ALEN);
     send_cb->status = status;
     if (xQueueSend(s_example_espnow_queue, &evt, ESPNOW_MAXDELAY) != pdTRUE) {
@@ -125,7 +128,7 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
 }
 
 /* Parse received ESPNOW data. return the state for know how to deal with it */
-int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint32_t *magic, uint8_t *payload, uint8_t payload_len)
+int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint8_t *magic, uint8_t *payload, uint8_t payload_len)
 {
     example_espnow_data_t *buf = (example_espnow_data_t *)data;
     uint16_t crc, crc_cal = 0;
@@ -163,7 +166,7 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
 
     return -1;
 }
-uint8_t mes2send[8] = "totootot";
+
 /* Prepare ESPNOW data to be sent. */
 void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
 {
@@ -171,16 +174,21 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
 
     assert(send_param->len >= sizeof(example_espnow_data_t));
 
+    uint8_t mes2send[8] = "totootot";
+
     buf->type = IS_BROADCAST_ADDR(send_param->dest_mac) ? EXAMPLE_ESPNOW_DATA_BROADCAST : EXAMPLE_ESPNOW_DATA_UNICAST;
     buf->state = send_param->state;
     buf->seq_num = s_example_espnow_seq[buf->type]++;
     buf->crc = 0;
     buf->magic = send_param->magic;
+
     /* Fill all remaining bytes after the data with random values */
     //esp_fill_random(buf->payload, send_param->len - sizeof(example_espnow_data_t));
     /* Copie du payload dans la structure */
+
     memcpy(buf->payload, mes2send, sizeof(mes2send));
-   buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
+    buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
+
 }
 
 static void example_espnow_task(void *pvParameter)
@@ -188,9 +196,11 @@ static void example_espnow_task(void *pvParameter)
     example_espnow_event_t evt;
     uint8_t recv_state = 0;
     uint16_t recv_seq = 0;
-    uint32_t recv_magic = 0;
+    uint8_t recv_magic = 0;
     //the 4 last byte pointed on some memory have to check the pointers and mem allocations
     uint8_t recv_payload[MAX_PAYLOAD_SIZE];//data of the frames became OK when put an U16
+    
+    
     bool is_broadcast = false;
     int ret;
 
@@ -200,12 +210,18 @@ static void example_espnow_task(void *pvParameter)
     /* Start sending broadcast ESPNOW data. */
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
     
-    if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
+    if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) 
+    {
         ESP_LOGE(TAG, "Send error");
         example_espnow_deinit(send_param);
         vTaskDelete(NULL);
     }
-    while (xQueueReceive(s_example_espnow_queue, &evt, portMAX_DELAY) == pdTRUE) {
+
+    u_int8_t Receiver_counter = CUSTOM_SEND_COUNT;
+    u_int8_t Frame_counter = FRAMECOUNTER;
+
+    while (xQueueReceive(s_example_espnow_queue, &evt, portMAX_DELAY) == pdTRUE) 
+    {
         switch (evt.id) {
             case EXAMPLE_ESPNOW_SEND_CB:
             {
@@ -214,18 +230,25 @@ static void example_espnow_task(void *pvParameter)
 
                 ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
 
-                if (is_broadcast && (send_param->broadcast == false)) {
+                if (is_broadcast && (send_param->broadcast == false)) 
+                {
                     break;
                 }
 
-                if (!is_broadcast) {
+                // if in UNICAST we decount 
+                if (!is_broadcast) 
+                {
                     send_param->count--;
-                    if (send_param->count == 0) {//si on a fini de transmettre on passe l'ACK (magic) en low
-                        ESP_LOGI(TAG, "Send done");
+                    //if transmit is over we put pingpong at false and uncount the frame counter
+                    if (send_param->count == 0) 
+                    {
+                        send_param->pingpong = false;
+                        ESP_LOGI(TAG, "send done");
                         example_espnow_deinit(send_param);
                         vTaskDelete(NULL);
                     }
                 }
+                
 
                 /* Delay a while before sending the next data. */
                 if (send_param->delay > 0) {
@@ -286,7 +309,7 @@ static void example_espnow_task(void *pvParameter)
                         /* The device which has the bigger magic number sends ESPNOW data, the other one
                          * receives ESPNOW data.
                          */
-                        if (send_param->unicast == false && send_param->magic >= recv_magic) {
+                        if (send_param->unicast == false && send_param->pingpong == true) {
                     	    ESP_LOGI(TAG, "Start sending unicast data");
                     	    ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
                             printf("we passed here \n");
@@ -308,7 +331,16 @@ static void example_espnow_task(void *pvParameter)
                 }
                 else if (ret == EXAMPLE_ESPNOW_DATA_UNICAST) {
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
-                    //printf("The magic number on it is :%ld",recv_magic);
+                    
+                    
+                    //if transmit is over we put pingpong at true for sending data and uncount the frame counter
+                    Receiver_counter--;
+                    if(Frame_counter == 0){
+                        ESP_LOGI(TAG, "receive done");
+                        example_espnow_deinit(send_param);
+                        vTaskDelete(NULL);
+                    }
+                    
                     for (int i = 0; i < sizeof(recv_payload); i++) {
                         printf("%02X ", recv_payload[i]);
                     }
@@ -320,14 +352,13 @@ static void example_espnow_task(void *pvParameter)
                     ESP_LOGI(TAG, "Receive error data from: "MACSTR"", MAC2STR(recv_cb->mac_addr));
                 }
                 break;
-            }
             default:
                 ESP_LOGE(TAG, "Callback type error: %d", evt.id);
                 break;
+            }
         }
     }
 }
-
 static esp_err_t example_espnow_init(void)
 {
     example_espnow_send_param_t *send_param;
@@ -381,6 +412,7 @@ static esp_err_t example_espnow_init(void)
     send_param->count = CUSTOM_SEND_COUNT;//CONFIG_ESPNOW_SEND_COUNT;//down to 25
     send_param->delay = CONFIG_ESPNOW_SEND_DELAY;
     send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; modif a 18
+    send_param->pingpong = true;
     send_param->buffer = malloc(FRAMELEN);
     if (send_param->buffer == NULL) {
         ESP_LOGE(TAG, "Malloc send buffer fail");
@@ -391,7 +423,7 @@ static esp_err_t example_espnow_init(void)
     }
     memcpy(send_param->dest_mac, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
     example_espnow_data_prepare(send_param);
-// put from 2048 to 3062 cancel the stack overflow no overflow with 2064
+    // put from 2048 to 3062 cancel the stack overflow no overflow with 2064
     xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL); 
 
     return ESP_OK;

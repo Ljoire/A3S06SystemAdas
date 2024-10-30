@@ -118,4 +118,4 @@ XUNIT_RESULT*.xml
 *.elf
 *.bin
 
-./ESPNOW/TestEspNow_ESP32/build/*
+.\ESPNOW/TestEspNow_ESP32/build/*
