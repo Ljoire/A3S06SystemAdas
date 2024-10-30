@@ -239,17 +239,19 @@ static void example_espnow_task(void *pvParameter)
                 if (!is_broadcast) 
                 {
                     send_param->count--;
+                    printf("receiver count = %u\n",send_param->count);
                     //if transmit is over we put pingpong at false and uncount the frame counter
-                    if(Frame_counter == 0){
-                        ESP_LOGI(TAG, "Frame sent turn off the frame");
-                        example_espnow_deinit(send_param);
-                        vTaskDelete(NULL);
-                    }
                     if (send_param->count == 0) 
                     {
                         send_param->pingpong = false;
                         Frame_counter--;
-                        printf("pass from sender to receiver Frame_counter = %llh Count= %llh\n",Frame_counter,send_param->count);
+                        Receiver_counter = CUSTOM_SEND_COUNT;//reset the value to CUSTOM_SEND_COUNT for the receiver mode
+                        printf("pass from sender to receiver Frame_counter = %u Recive counter= %u\n",Frame_counter,Receiver_counter);
+                        if(Frame_counter == 0){
+                            ESP_LOGI(TAG, "Frame sent turn off the frame");
+                            example_espnow_deinit(send_param);
+                            vTaskDelete(NULL);
+                    }
                         break;
                     }
 
@@ -362,7 +364,9 @@ static void example_espnow_task(void *pvParameter)
                             }
                         else{//pass on sender
                             send_param->pingpong = true;
-                            send_param->count = CUSTOM_SEND_COUNT;// we refill the counter for the send mode 
+                            //we add +1 du the configuration in the case "SEND_CB"
+                            send_param->count = CUSTOM_SEND_COUNT + 1;// we refill the counter for the send mode
+                            printf("pass from receiver to sender Frame_counter = %u Count= %u\n",Frame_counter,send_param->count);
                             memcpy(send_param->dest_mac, recv_cb->mac_addr, ESP_NOW_ETH_ALEN);
                             example_espnow_data_prepare(send_param);
 
@@ -409,7 +413,6 @@ static esp_err_t example_espnow_init(void)
 #endif
     /* Set primary master key. */
     ESP_ERROR_CHECK( esp_now_set_pmk((uint8_t *)CONFIG_ESPNOW_PMK) );
-
     /* Add broadcast peer information to peer list. */
     esp_now_peer_info_t *peer = malloc(sizeof(esp_now_peer_info_t));
     if (peer == NULL) {
@@ -438,7 +441,7 @@ static esp_err_t example_espnow_init(void)
     send_param->unicast = false;
     send_param->broadcast = true;
     send_param->state = 0;
-    send_param->magic = 4;//put the ESPS3 as receiver
+    send_param->magic = 9;
     send_param->count = CUSTOM_SEND_COUNT;//CONFIG_ESPNOW_SEND_COUNT;//down to 25
     send_param->delay = CONFIG_ESPNOW_SEND_DELAY;
     send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; modif a 18
