@@ -441,7 +441,7 @@ static esp_err_t example_espnow_init(void)
     send_param->unicast = false;
     send_param->broadcast = true;
     send_param->state = 0;
-    send_param->magic = 9;
+    send_param->magic = esp_random();
     send_param->count = CUSTOM_SEND_COUNT;//CONFIG_ESPNOW_SEND_COUNT;//down to 25
     send_param->delay = CONFIG_ESPNOW_SEND_DELAY;
     send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; modif a 18
