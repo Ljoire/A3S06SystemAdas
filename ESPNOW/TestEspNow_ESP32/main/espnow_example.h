@@ -72,7 +72,7 @@ typedef struct {
     bool broadcast;                       //Send broadcast ESPNOW data.
     bool pingpong;                       //Define the sender and receiver 
     uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
-    uint32_t magic;                       //Magic number which is used to determine which device to send unicast ESPNOW data.
+    uint8_t magic;                       //Magic number which is used to determine which device to send unicast ESPNOW data.
     uint16_t count;                       //Total count of unicast ESPNOW data to be sent.
     uint16_t delay;                       //Delay between sending two ESPNOW data, unit: ms.
     u_int8_t len;                              //Length of ESPNOW data to be sent, unit: byte.
@@ -81,3 +81,5 @@ typedef struct {
 } example_espnow_send_param_t;
 
 #endif
+
+//void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send);

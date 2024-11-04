@@ -195,8 +195,41 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_
 
 }
 
-    u_int8_t message[8] = "toto";
-    u_int8_t *Pmessage = message;
+u_int8_t message[8] = "toto";
+u_int8_t *Pmessage = message;
+
+/* DESCRIPTION OF THE FUNCTION
+*This function concatenate multiple thing
+*Prepare the data in regards of what's specified in parameter
+*Parameter :    
+*               send_param -> the destinations parameter
+*               message -> the message to send. If str use (uint_8t*) Str2Send
+*               desMAC -> the MAC destinations MAC adress usually from send_cb
+*Send the data to the MAC adress specified in parameter
+*Return is OK=0 NOK=1*/
+int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message, const uint8_t *desMAC){
+    /* Delay a while before sending the next data. */
+    if (send_param->delay > 0) {
+        vTaskDelay(send_param->delay / portTICK_PERIOD_MS);
+    }
+
+    /* Copy the destination MAC address into the send parameter. */
+    memcpy(send_param->dest_mac, desMAC, ESP_NOW_ETH_ALEN);
+    u_int8_t messageboundchecked[MAX_PAYLOAD_SIZE];
+    memcpy(messageboundchecked,message,MAX_PAYLOAD_SIZE);
+    ESP_LOGI(TAG, "Sending data to "MACSTR" the message is %s: ", MAC2STR(desMAC),messageboundchecked);
+    /* Prepare the ESPNOW data using the provided message. */
+    example_espnow_data_prepare(send_param, messageboundchecked);
+
+    /* Send the data after preparation. */
+    if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
+        ESP_LOGE(TAG, "Send error");
+        example_espnow_deinit(send_param);
+        vTaskDelete(NULL);  // Optionally terminate the task.
+        return -1;
+    }
+    return 0;
+}
 
 static void example_espnow_task(void *pvParameter)
 {
@@ -244,24 +277,17 @@ static void example_espnow_task(void *pvParameter)
                 // if in UNICAST we decount 
                 if (!is_broadcast) 
                 {
-                    
+                    if(send_param->pingpong == false){
+                        printf("not my turn to send \n");
+                        break;
+                    }
                     printf("Sending counter = %u\n",send_param->count);
                     //if transmit is over we put pingpong at false and uncount the frame counter
                     if (send_param->count == 0) 
                     {
                         ESP_LOGI(TAG, "send data for handshaking to "MACSTR"", MAC2STR(send_cb->mac_addr));
 
-                        memcpy(send_param->dest_mac, send_cb->mac_addr, ESP_NOW_ETH_ALEN);
-                        message[8] = "SdLead ";
-                        example_espnow_data_prepare(send_param,message);
-
-
-                        /* Send the next data after the previous data is sent. */
-                        if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
-                            ESP_LOGE(TAG, "Send error");
-                            example_espnow_deinit(send_param);
-                            vTaskDelete(NULL);
-                        }                        
+                        espnow_datasending(send_param,(uint8_t*) "SdLead,",send_cb->mac_addr);  
                         
                         send_param->pingpong = false;
                         Frame_counter--;
@@ -270,33 +296,19 @@ static void example_espnow_task(void *pvParameter)
 
                         if(Frame_counter == 0){
                             ESP_LOGI(TAG, "Frame sent turn off the frame");
+                            espnow_datasending(send_param,(uint8_t *)"ENDING",send_cb->mac_addr);
                             example_espnow_deinit(send_param);
                             vTaskDelete(NULL);
                     }
-                        
+                        break;
                     }
                     send_param->count--;
-                    /* ENVOYER LES DONNEES STANDARD UNICAST*/
+                    espnow_datasending(send_param,(u_int8_t *)"UNIDATA",send_cb->mac_addr);
                     break;
                 }
                 
-                /* Delay a while before sending the next data. */
-                if (send_param->delay > 0) {
-                    vTaskDelay(send_param->delay/portTICK_PERIOD_MS);
-                }
-                ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(send_cb->mac_addr));
-
-                memcpy(send_param->dest_mac, send_cb->mac_addr, ESP_NOW_ETH_ALEN);
-                
-                strcpy((char *)Pmessage,"BRODATA");
-                example_espnow_data_prepare(send_param,Pmessage);
-                /* Send the next data after the previous data is sent. */
-                if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
-                    ESP_LOGE(TAG, "Send error");
-                    example_espnow_deinit(send_param);
-                    vTaskDelete(NULL);
-                }
-               break;          
+                espnow_datasending(send_param,(u_int8_t *)"BRODATA",send_cb->mac_addr);
+                break;          
             }
 
             case EXAMPLE_ESPNOW_RECV_CB:
@@ -341,26 +353,22 @@ static void example_espnow_task(void *pvParameter)
                          * receives ESPNOW data.
                          */
                         if (send_param->unicast == false && send_param->magic >= recv_magic) {
-                            send_param->pingpong = true;
+                            printf("My magic number is : %d and the received is :%d",send_param->magic,recv_magic);
                     	    ESP_LOGI(TAG, "Start sending unicast data");
                     	    ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
                             printf("we passed here \n");
-
+                            send_param->pingpong = true;
+                            send_param->unicast = true;
+                            send_param->broadcast = false;
                     	    /* Start sending unicast ESPNOW data. */
-                            memcpy(send_param->dest_mac, recv_cb->mac_addr, ESP_NOW_ETH_ALEN);
-                            message[8] = "StUni  ";
-                            example_espnow_data_prepare(send_param,message);
-
-                            //this if SEND THE FUNCTIONS 
-                            if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
-                                ESP_LOGE(TAG, "Send error");
-                                example_espnow_deinit(send_param);
-                                vTaskDelete(NULL);
-                            }
-                            else {
-                                send_param->broadcast = false;
-                                send_param->unicast = true;
-                            }
+                            espnow_datasending(send_param,(u_int8_t *) "StrUniM",recv_cb->mac_addr);    
+                            break;
+                        }            
+                        else{
+                            send_param->broadcast = false;
+                            send_param->unicast = true;
+                            send_param->pingpong = false;
+                            break;
                         }
                     }
                 }
@@ -368,7 +376,7 @@ static void example_espnow_task(void *pvParameter)
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
                     uint8_t parserMessage [sizeof(recv_payload)];
                     for (int i = 0; i < sizeof(recv_payload); i++) {
-                        printf("%x ", recv_payload[i]);
+                        printf("%c ", recv_payload[i]);
                         parserMessage[i] = recv_payload[i];
                     }
 
@@ -377,34 +385,26 @@ static void example_espnow_task(void *pvParameter)
                     send_param->broadcast = false;
                     
                     uint8_t table[] = "SdLead ";
+                    //if we receive the acquitement message we pass to sender
                     if(parserMessage[0] == table[0]){
                         printf("Receive all the data\n");
-
+                        send_param->pingpong = true;
                         //testing if the frame is finished
                         Frame_counter--;
                         if(Frame_counter == 0){
                             ESP_LOGI(TAG, "receive done");
+                            espnow_datasending(send_param,(uint8_t *)"ENDING",recv_cb->mac_addr);
                             example_espnow_deinit(send_param);
                             vTaskDelete(NULL);
                             }
                         else{//pass on sender
-                            send_param->pingpong = true;
                             //we add +1 du the configuration in the case "SEND_CB"
                             send_param->count = CUSTOM_SEND_COUNT + 1;// we refill the counter for the send mode
                             printf("pass from receiver to sender Frame_counter = %u Count= %u\n",Frame_counter,send_param->count);
-                            memcpy(send_param->dest_mac, recv_cb->mac_addr, ESP_NOW_ETH_ALEN);
-                            message[8] = "TkLead ";
-                            example_espnow_data_prepare(send_param,message);
-                            //this if SEND THE FUNCTIONS 
-                            if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
-                                ESP_LOGE(TAG, "Send error");
-                                example_espnow_deinit(send_param);
-                                vTaskDelete(NULL);
-                            } 
+                            espnow_datasending(send_param,(u_int8_t *) "TakLead",recv_cb->mac_addr);
 
                         }
                     }
-
                     
                 }
                 else {
