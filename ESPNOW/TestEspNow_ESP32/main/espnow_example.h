@@ -81,5 +81,13 @@ typedef struct {
 } example_espnow_send_param_t;
 
 #endif
-
-//void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send);
+/*--------- PARAMETER CONFIGURATION ---------*/
+void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send);
+int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message, const uint8_t *desMAC);
+void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send);
+int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint8_t *magic, uint8_t *payload, uint8_t payload_len);
+static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status);
+static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len);
+static void example_espnow_task(void *pvParameter);
+static void example_wifi_init(void);
+static void example_espnow_deinit(example_espnow_send_param_t *send_param);
