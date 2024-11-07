@@ -345,9 +345,6 @@ static void example_espnow_task(void *pvParameter)
                     /* Indicates that the device has received broadcast ESPNOW data. */
                     if (send_param->state == 0) {
                         send_param->state = 1;
-                        if (recv_state == 1){
-                            ESP_LOGI(TAG,"Both ESP have received broadcast data wait for being call back on the main");
-                            vTaskDelete(1);
                         }
                     }
 
@@ -356,11 +353,15 @@ static void example_espnow_task(void *pvParameter)
                      * broadcast ESPNOW data, stop sending broadcast ESPNOW data and start sending unicast
                      * ESPNOW data.
                      */
-                    if (recv_state == 1 && IS_BROADCAST_ADDR(send_param->dest_mac) != 0) {
+                    if (recv_state == 1) {
                         /* The device which has the bigger magic number sends ESPNOW data, the other one
                          * receives ESPNOW data.
                          */
                         if (send_param->unicast == false && send_param->magic >= recv_magic) {
+                            //Suspend the task until we call it back for sending informations
+                            ESP_LOGI(TAG,"We suspend the task for call it back in a main function");
+                            vTaskSuspend(&ESPNOW_data);
+
                             printf("My magic number is : %d and the received is :%d",send_param->magic,recv_magic);
                     	    ESP_LOGI(TAG, "Start sending unicast data");
                     	    ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
@@ -373,6 +374,10 @@ static void example_espnow_task(void *pvParameter)
                             break;
                         }            
                         else{
+                            //Suspend the task until we call it back for sending informations
+                            ESP_LOGI(TAG,"We suspend the task for call it back in a main function");
+                            vTaskSuspend(&ESPNOW_data);
+                            
                             send_param->broadcast = false;
                             send_param->unicast = true;
                             send_param->pingpong = false;
@@ -498,7 +503,7 @@ static esp_err_t example_espnow_init(void)//add *pvParameter
     example_espnow_data_prepare(send_param,(uint8_t*) "DBRODAT");
     // put from 2048 to 3062 cancel the stack overflow no overflow with 2064
     //This task will took the brodcast data
-    xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL);
+    xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, &ESPNOW_data);
     return ESP_OK;
 }
 
@@ -522,9 +527,6 @@ void app_main(void)
     example_wifi_init();
     printf("wifi initialized");
     example_espnow_init();
-    while(1){
-        if()
-    }
     printf("ESP now init");
     
 }
