@@ -230,7 +230,11 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
     }
     return 0;
 }
-
+/* 
+* Task for ESP_NOW sending and receive function
+* Specify a MAC ADRESS FOR BROADCAST DATA before calling this function if you want to send broadcast data
+* The second call will took the adress registred before for sending unidata
+*/
 static void example_espnow_task(void *pvParameter)
 {
     example_espnow_event_t evt;
@@ -249,7 +253,7 @@ static void example_espnow_task(void *pvParameter)
 
     /* Start sending broadcast ESPNOW data. */
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
-    
+    //launch an event on the Queue
     if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) 
     {
         ESP_LOGE(TAG, "Send error");
@@ -341,6 +345,10 @@ static void example_espnow_task(void *pvParameter)
                     /* Indicates that the device has received broadcast ESPNOW data. */
                     if (send_param->state == 0) {
                         send_param->state = 1;
+                        if (recv_state == 1){
+                            ESP_LOGI(TAG,"Both ESP have received broadcast data wait for being call back on the main");
+                            vTaskDelete(1);
+                        }
                     }
 
                     /* If receive broadcast ESPNOW data which indicates that the other device has received
@@ -348,7 +356,7 @@ static void example_espnow_task(void *pvParameter)
                      * broadcast ESPNOW data, stop sending broadcast ESPNOW data and start sending unicast
                      * ESPNOW data.
                      */
-                    if (recv_state == 1) {
+                    if (recv_state == 1 && IS_BROADCAST_ADDR(send_param->dest_mac) != 0) {
                         /* The device which has the bigger magic number sends ESPNOW data, the other one
                          * receives ESPNOW data.
                          */
@@ -368,6 +376,7 @@ static void example_espnow_task(void *pvParameter)
                             send_param->broadcast = false;
                             send_param->unicast = true;
                             send_param->pingpong = false;
+                            //
                             break;
                         }
                     }
@@ -419,9 +428,9 @@ static void example_espnow_task(void *pvParameter)
     }
     printf("out of the while \n");
 }
-static esp_err_t example_espnow_init(void)
+static esp_err_t example_espnow_init(void)//add *pvParameter
 {
-    example_espnow_send_param_t *send_param;
+    example_espnow_send_param_t *send_param; //= (example_espnow_send_param_t *)pvParameter;
 
     s_example_espnow_queue = xQueueCreate(ESPNOW_QUEUE_SIZE, sizeof(example_espnow_event_t));
     if (s_example_espnow_queue == NULL) {
@@ -456,6 +465,7 @@ static esp_err_t example_espnow_init(void)
     free(peer);
 
     /* Initialize sending parameters. */
+//will be commented
     send_param = malloc(sizeof(example_espnow_send_param_t));
     if (send_param == NULL) {
         ESP_LOGE(TAG, "Malloc send parameter fail");
@@ -463,6 +473,7 @@ static esp_err_t example_espnow_init(void)
         esp_now_deinit();
         return ESP_FAIL;
     }
+
     memset(send_param, 0, sizeof(example_espnow_send_param_t));
     send_param->unicast = false;
     send_param->broadcast = true;
@@ -473,6 +484,7 @@ static esp_err_t example_espnow_init(void)
     send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; modif a 18
     send_param->pingpong = true;
     send_param->buffer = malloc(FRAMELEN);
+// Will be commented
     if (send_param->buffer == NULL) {
         ESP_LOGE(TAG, "Malloc send buffer fail");
         free(send_param);
@@ -480,9 +492,12 @@ static esp_err_t example_espnow_init(void)
         esp_now_deinit();
         return ESP_FAIL;
     }
+
+
     memcpy(send_param->dest_mac, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
-    example_espnow_data_prepare(send_param,message);
+    example_espnow_data_prepare(send_param,(uint8_t*) "DBRODAT");
     // put from 2048 to 3062 cancel the stack overflow no overflow with 2064
+    //This task will took the brodcast data
     xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL);
     return ESP_OK;
 }
@@ -507,6 +522,9 @@ void app_main(void)
     example_wifi_init();
     printf("wifi initialized");
     example_espnow_init();
+    while(1){
+        if()
+    }
     printf("ESP now init");
     
 }
