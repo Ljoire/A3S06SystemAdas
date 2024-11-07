@@ -81,3 +81,5 @@ typedef struct {
 } example_espnow_send_param_t;
 
 #endif
+
+//void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send);
