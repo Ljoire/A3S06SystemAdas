@@ -81,13 +81,52 @@ typedef struct {
 } example_espnow_send_param_t;
 
 #endif
+
 /*--------- PARAMETER CONFIGURATION ---------*/
-void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send);
-int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message, const uint8_t *desMAC);
-void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send);
-int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint8_t *magic, uint8_t *payload, uint8_t payload_len);
-static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status);
-static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len);
-static void example_espnow_task(void *pvParameter);
+/* WiFi should start before using ESPNOW */
 static void example_wifi_init(void);
+
+/* ESPNOW sending or receiving callback function is called in WiFi task.
+ * Users should not do lengthy operations from this task. Instead, post
+ * necessary data to a queue and handle it from a lower priority task. */
+static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status);
+
+// Traitment function of ESPNOW. The functions threat the data, if it was added on the peer list
+/*
+*  Traitment of the error case and liberate the malloc if data received NOK
+*/
+static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len);
+
+
+/* Parse received ESPNOW data. return the state for know how to deal with it */
+int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint8_t *magic, uint8_t *payload, uint8_t payload_len);
+
+
+
+/* Prepare ESPNOW data to be sent. */
+void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send);
+
+
+/* DESCRIPTION OF THE FUNCTION
+*This function concatenate multiple thing
+*Prepare the data in regards of what's specified in parameter
+*Parameter :    
+*               send_param -> the destinations parameter
+*               message -> the message to send. If str use (uint_8t*) Str2Send
+*               desMAC -> the MAC destinations MAC adress usually from send_cb
+*Send the data to the MAC adress specified in parameter
+*Return is OK=0 NOK=1*/
+int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message, const uint8_t *desMAC);
+
+/* 
+* Task for ESP_NOW sending and receive function
+* Specify a MAC ADRESS FOR BROADCAST DATA before calling this function if you want to send broadcast data
+* The second call will took the adress registred before for sending unidata
+*/
+static void example_espnow_task(void *pvParameter);
+
+//add *pvParameter
+static esp_err_t example_espnow_init(void);
+
+/* Unitialize the */
 static void example_espnow_deinit(example_espnow_send_param_t *send_param);
