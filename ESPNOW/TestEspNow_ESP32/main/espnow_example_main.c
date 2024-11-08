@@ -29,12 +29,23 @@
 #include "esp_now.h"
 #include "esp_crc.h"
 #include "espnow_example.h"
+#include "driver/gpio.h"
+#include "freertos/task.h"
+#include "esp_timer.h"
+#include "esp_rom_sys.h"
 
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
 #define MAX_PAYLOAD_SIZE 8
 #define CUSTOM_SEND_COUNT 2
+#define TRIG_PIN_1 4
+#define ECHO_PIN_1 5
+#define TRIG_PIN_2 18
+#define ECHO_PIN_2 19
+#define CRITICAL_DISTANCE_CM 20
+#define SOUND_SPEED 0.034
+#define TIMEOUT 30000
 
 #define FRAMECOUNTER 5
 
@@ -50,6 +61,37 @@ static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
 static void example_espnow_deinit(example_espnow_send_param_t *send_param);
 
 TaskHandle_t ESPNOW_data;
+
+void init_ultrasonic_sensor() {
+    gpio_set_direction(TRIG_PIN_1, GPIO_MODE_OUTPUT);
+    gpio_set_direction(ECHO_PIN_1, GPIO_MODE_INPUT);
+    gpio_set_direction(TRIG_PIN_2, GPIO_MODE_OUTPUT);
+    gpio_set_direction(ECHO_PIN_2, GPIO_MODE_INPUT);
+}
+
+float measure_distance(int trig_pin, int echo_pin) {
+    gpio_set_level(trig_pin, 0);
+    esp_rom_delay_us(2);
+    gpio_set_level(trig_pin, 1);
+    esp_rom_delay_us(10);
+    gpio_set_level(trig_pin, 0);
+
+    int64_t start_wait = esp_timer_get_time();
+    while (gpio_get_level(echo_pin) == 0 && esp_timer_get_time() - start_wait < TIMEOUT);
+
+    int64_t start_time = esp_timer_get_time();
+    while (gpio_get_level(echo_pin) == 1 && esp_timer_get_time() - start_time < TIMEOUT);
+    int64_t end_time = esp_timer_get_time();
+
+    int64_t pulse_duration = end_time - start_time;
+    float distance = (pulse_duration / 2.0) * SOUND_SPEED;
+
+    if (pulse_duration >= TIMEOUT) {
+        return -1;
+    }
+
+    return distance;
+}
 
 
 /* WiFi should start before using ESPNOW */
@@ -488,9 +530,28 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
+    init_ultrasonic_sensor();
     example_wifi_init();
     printf("wifi initialized");
     example_espnow_init();
     printf("ESP now init");
-    
+    while (true) {
+        float distance1 = measure_distance(TRIG_PIN_1, ECHO_PIN_1);
+        float distance2 = measure_distance(TRIG_PIN_2, ECHO_PIN_2);
+
+        if(distance1 >= 0 && distance1 < CRITICAL_DISTANCE_CM){
+            ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance1);
+            esp_now_send(NULL, (uint8_t *)&distance1, sizeof(distance1));
+            /*xTaskCreate(example_espnow_task, "example_espnow_task", 4096, send_param, 4,&ESPNOW_data)*/
+        } else if (distance2 >= 0 && distance2 < CRITICAL_DISTANCE_CM) {
+            ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance2);
+            esp_now_send(NULL, (uint8_t *)&distance2, sizeof(distance2));
+           /* xTaskCreate(example_espnow_task, "example_espnow_task", 4096, send_param, 4,&ESPNOW_data)*/
+        } 
+        else{
+            ESP_LOGI(TAG, "No critical object detected. Distance1: %.2f cm, Distance2: %.2f cm", distance1, distance2);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000)); 
+    }
 }
