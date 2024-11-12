@@ -10,6 +10,29 @@
 #ifndef ESPNOW_EXAMPLE_H
 #define ESPNOW_EXAMPLE_H
 
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <assert.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/timers.h"
+#include "nvs_flash.h"
+#include "esp_random.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "esp_wifi.h"
+#include "esp_log.h"
+#include "esp_mac.h"
+#include "esp_now.h"
+#include "esp_crc.h"
+#include "driver/gpio.h"
+#include "freertos/task.h"
+#include "esp_timer.h"
+#include "esp_rom_sys.h"
+
+
+
 /* ESPNOW can work in both station and softap mode. It is configured in menuconfig. */
 #if CONFIG_ESPNOW_WIFI_MODE_STATION
 #define ESPNOW_WIFI_MODE WIFI_MODE_STA
@@ -84,7 +107,7 @@ typedef struct {
 
 /*--------- PARAMETER CONFIGURATION ---------*/
 /* WiFi should start before using ESPNOW */
-static void example_wifi_init(void);
+void example_wifi_init(void);
 
 /* ESPNOW sending or receiving callback function is called in WiFi task.
  * Users should not do lengthy operations from this task. Instead, post
@@ -126,7 +149,8 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 static void example_espnow_task(void *pvParameter);
 
 //add *pvParameter
-static esp_err_t example_espnow_init(void);
+esp_err_t example_espnow_init(void);
 
 /* Unitialize the */
-static void example_espnow_deinit(example_espnow_send_param_t *send_param);
+void example_espnow_deinit(example_espnow_send_param_t *send_param);
+
