@@ -60,13 +60,20 @@ void app_main(void)
         ESP_LOGE(TAG,"error during the initialization of espnow");        
     }
     printf("ESP now init");
+
+    //array for stock the result and his pointer
+    u_int8_t result[MAX_PAYLOAD_SIZE];
+    u_int8_t *pResult = &result[0];
+
     while (true) {
         float distance1 = measure_distance(TRIG_PIN_1, ECHO_PIN_1);
         float distance2 = measure_distance(TRIG_PIN_2, ECHO_PIN_2);
 
         if(distance1 >= 0 && distance1 < CRITICAL_DISTANCE_CM){
+            //if we find a critacal distance we copy the value inside the table
+            memcpy(result,&distance1,sizeof(MAX_PAYLOAD_SIZE));
             ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance1);
-            //esp_now_send(NULL, (uint8_t *)&distance1, sizeof(distance1));
+            espnow_datasending(send_param, pResult, send_param->dest_mac);
             /*xTaskCreate(example_espnow_task, "example_espnow_task", 4096, send_param, 4,&ESPNOW_data)*/
         } else if (distance2 >= 0 && distance2 < CRITICAL_DISTANCE_CM) {
             ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance2);

@@ -16,7 +16,6 @@
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
-#define MAX_PAYLOAD_SIZE 8
 #define CUSTOM_SEND_COUNT 2
 #define FRAMECOUNTER 5
 #define ESPNOW_MAXDELAY 512
