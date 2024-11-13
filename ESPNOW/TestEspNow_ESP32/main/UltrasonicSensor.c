@@ -11,6 +11,7 @@
 #define TRIG_PIN GPIO_NUM_5      
 #define ECHO_PIN GPIO_NUM_18    
 #define SOUND_SPEED 0.0343       
+#define CRITICAL_DISTANCE 20.000
 
 void init_ultrasonic_sensor() {
     gpio_set_direction(TRIG_PIN, GPIO_MODE_OUTPUT);

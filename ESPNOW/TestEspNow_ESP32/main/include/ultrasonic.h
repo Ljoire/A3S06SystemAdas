@@ -5,5 +5,3 @@
 void init_ultrasonic_sensor(void);
 
 float measure_distance(void);
-
-float measure_distance(int trig_pin, int echo_pin);
