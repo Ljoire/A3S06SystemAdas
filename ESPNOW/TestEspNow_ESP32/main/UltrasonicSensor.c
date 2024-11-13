@@ -6,44 +6,32 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_timer.h"
+#include "ultrasonic.h"
 
 
-#define TRIG_PIN GPIO_NUM_5      
-#define ECHO_PIN GPIO_NUM_18    
-#define SOUND_SPEED 0.0343       
-#define CRITICAL_DISTANCE 20.000
 
-void init_ultrasonic_sensor() {
-    gpio_set_direction(TRIG_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_direction(ECHO_PIN, GPIO_MODE_INPUT);
+esp_err_t ultrasonic_measure(const ultrasonic_sensor_t *dev, float max_distance, float *distance)
+{
+    CHECK_ARG(dev && distance);
+
+    uint32_t time_us;
+    CHECK(ultrasonic_measure_raw(dev, max_distance * ROUNDTRIP_M, &time_us));
+    *distance = time_us / ROUNDTRIP_M;
+
+    return ESP_OK;
 }
 
-float measure_distance() {
 
-    gpio_set_level(TRIG_PIN, 1);
-    esp_rom_delay_us(10);  
-    gpio_set_level(TRIG_PIN, 0);
+esp_err_t ultrasonic_init(const ultrasonic_sensor_t *dev)
+{
+    CHECK_ARG(dev);
 
-    while (gpio_get_level(ECHO_PIN) == 0);
-    int64_t start_time = esp_timer_get_time();
+    CHECK(gpio_set_direction(dev->trigger_pin, GPIO_MODE_OUTPUT));
+    CHECK(gpio_set_direction(dev->echo_pin, GPIO_MODE_INPUT));
 
-    while (gpio_get_level(ECHO_PIN) == 1);
-    int64_t end_time = esp_timer_get_time();
-
-    int64_t pulse_duration = end_time - start_time;
-
-    float distance = (pulse_duration / 2.0) * SOUND_SPEED;
-    printf("Distance: %.2f cm\n", distance);  
-
-    return distance;
+    return gpio_set_level(dev->trigger_pin, 0);
 }
 
-void ultrasonic_task(void *pvParameters) {
-    while (true) {
-        float distance = measure_distance();
-        vTaskDelay(10000 / portTICK_PERIOD_MS);  
-    }
-}
 
 /* TO implement*/
 //    xTaskCreate(ultrasonic_task, "ultrasonic_task", 2048, NULL, 5, NULL);
