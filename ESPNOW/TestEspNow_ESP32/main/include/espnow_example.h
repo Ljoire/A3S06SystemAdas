@@ -44,8 +44,11 @@
 
 #define ESPNOW_QUEUE_SIZE           6
 #define MAX_PAYLOAD_SIZE            8
+#define ESPNOW_MAXDELAY             512
 
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, s_example_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
+
+static QueueHandle_t s_example_espnow_queue;
 
 typedef enum {
     EXAMPLE_ESPNOW_SEND_CB,

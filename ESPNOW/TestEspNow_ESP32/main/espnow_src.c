@@ -16,9 +16,9 @@
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
-#define CUSTOM_SEND_COUNT 2
+#define CUSTOM_SEND_COUNT 1
 #define FRAMECOUNTER 5
-#define ESPNOW_MAXDELAY 512
+
 
 static const char *TAG = "espnow_example";
 
@@ -47,9 +47,7 @@ void example_wifi_init(void)
 }
 
 
-/* ESPNOW sending or receiving callback function is called in WiFi task.
- * Users should not do lengthy operations from this task. Instead, post
- * necessary data to a queue and handle it from a lower priority task. */
+
 static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
     example_espnow_event_t evt;
@@ -68,9 +66,9 @@ static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_
         ESP_LOGW(TAG, "Send send queue fail");
     }
 }
-/* Traitment function of ESPNOW. The functions threat the data, if it was added on the peer list/
-*  Traitment of the error case and liberate the malloc if data received NOK
-*/
+
+
+
 static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len)
 {
     example_espnow_event_t evt;
@@ -109,7 +107,7 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
 }
 
 
-/* Parse received ESPNOW data. return the state for know how to deal with it */
+
 int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint8_t *magic, uint8_t *payload, uint8_t payload_len)
 {
     example_espnow_data_t *buf = (example_espnow_data_t *)data;
@@ -180,15 +178,7 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_
 u_int8_t message[8] = "toto";
 u_int8_t *Pmessage = message;
 
-/* DESCRIPTION OF THE FUNCTION
-*This function concatenate multiple thing
-*Prepare the data in regards of what's specified in parameter
-*Parameter :    
-*               send_param -> the destinations parameter
-*               message -> the message to send. If str use (uint_8t*) Str2Send
-*               desMAC -> the MAC destinations MAC adress usually from send_cb
-*Send the data to the MAC adress specified in parameter
-*Return is OK=0 NOK=1*/
+
 int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message, const uint8_t *desMAC){
     /* Delay a while before sending the next data. */
     if (send_param->delay > 0) {
@@ -214,11 +204,7 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 }
 
 
-/* 
-* Task for ESP_NOW sending and receive function
-* Specify a MAC ADRESS FOR BROADCAST DATA before calling this function if you want to send broadcast data
-* The second call will took the adress registred before for sending unidata
-*/
+
 static void example_espnow_task(void *pvParameter)
 {
     example_espnow_event_t evt;
@@ -280,6 +266,7 @@ static void example_espnow_task(void *pvParameter)
                         }
                         break;
                     }
+                    
                     send_param->count--;
                     /* Send the sensor data after preparation in upper function. */
                     if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
@@ -290,7 +277,7 @@ static void example_espnow_task(void *pvParameter)
                     }
                     //suspend the task until further execution
                     //vTaskSuspend(&ESPNOW_data_handler);
-                    espnow_datasending(send_param, (uint8_t *)"UNIDATA", send_cb->mac_addr);
+                    //espnow_datasending(send_param, (uint8_t *)"UNIDATA", send_cb->mac_addr);
                     break;
                 }
 
@@ -328,6 +315,7 @@ static void example_espnow_task(void *pvParameter)
                     }
 
                     if (recv_state == 1) {
+                        /*      COMMENT FOR FURTHER USAGE
                         if (send_param->unicast == false && send_param->magic >= recv_magic) {//map an high value for the sender
 
                             ESP_LOGI(TAG, "We suspend the task for call it back in a main function");
@@ -343,17 +331,19 @@ static void example_espnow_task(void *pvParameter)
                             //espnow_datasending(send_param, (uint8_t *)"StrUniM", recv_cb->mac_addr);
                             break;
                         } else {
+                        */
 
                             ESP_LOGI(TAG, "We suspend the task for call it back in a main function");
                             //vTaskSuspend(&ESPNOW_data_handler);
                             
                             send_param->broadcast = false;
                             send_param->unicast = true;
-                            send_param->pingpong = false;
+                            send_param->pingpong = false;// We have to set pingpong to true when we want to send some data in the main
                             break;
-                        }
+                        //}
                     }
                 } else if (ret == EXAMPLE_ESPNOW_DATA_UNICAST) {
+
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
                     uint8_t parserMessage[sizeof(recv_payload -1)];
                     for (int i = 0; i < sizeof(recv_payload); i++) {
@@ -363,7 +353,7 @@ static void example_espnow_task(void *pvParameter)
                     printf(" is the data parsed \n");
                     //Send the parsed data
                     
-                    //ACK
+                    //ACK To integrate latere
                     parserMessage[sizeof(recv_payload)] = 'K';
                     send_param->broadcast = false;
 
@@ -405,7 +395,7 @@ static void example_espnow_task(void *pvParameter)
     }
 }
 
-//add *pvParameter
+
 esp_err_t example_espnow_init(void *pvParameter)
 {
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;

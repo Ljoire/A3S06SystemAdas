@@ -43,6 +43,9 @@ static const char *TAG = "espnow_example";
 void app_main(void)
 {
     esp_err_t ret = nvs_flash_init();
+    example_espnow_event_t evt;
+    evt.id = EXAMPLE_ESPNOW_SEND_CB;
+
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK( nvs_flash_erase() );
         ret = nvs_flash_init();
@@ -73,12 +76,15 @@ void app_main(void)
             //if we find a critacal distance we copy the value inside the table
             memcpy(result,&distance1,sizeof(MAX_PAYLOAD_SIZE));
             ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance1);
-            espnow_datasending(send_param, pResult, send_param->dest_mac);
-            /*xTaskCreate(example_espnow_task, "example_espnow_task", 4096, send_param, 4,&ESPNOW_data)*/
+            example_espnow_data_prepare(send_param, pResult);
+
+            //we post an order to send data via xQueueSend
+            if (xQueueSend(s_example_espnow_queue, &evt.id, ESPNOW_MAXDELAY) != pdTRUE) {
+                ESP_LOGW(TAG, "Send send queue fail");
+            }
         } else if (distance2 >= 0 && distance2 < CRITICAL_DISTANCE_CM) {
             ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance2);
             //esp_now_send(NULL, (uint8_t *)&distance2, sizeof(distance2));
-           /* xTaskCreate(example_espnow_task, "example_espnow_task", 4096, send_param, 4,&ESPNOW_data)*/
         } 
         else{
             ESP_LOGI(TAG, "No critical object detected. Distance1: %.2f cm, Distance2: %.2f cm", distance1, distance2);
