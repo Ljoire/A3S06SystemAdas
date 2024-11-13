@@ -28,6 +28,19 @@ typedef struct
 esp_err_t ultrasonic_init(const ultrasonic_sensor_t *dev);   
 
 /**
+ * @brief Measure time between ping and echo
+ *
+ * @param dev Pointer to the device descriptor
+ * @param max_time_us Maximal time to wait for echo
+ * @param[out] time_us Time, us
+ * @return `ESP_OK` on success, otherwise:
+ *         - ::ESP_ERR_ULTRASONIC_PING         - Invalid state (previous ping is not ended)
+ *         - ::ESP_ERR_ULTRASONIC_PING_TIMEOUT - Device is not responding
+ *         - ::ESP_ERR_ULTRASONIC_ECHO_TIMEOUT - Distance is too big or wave is scattered
+ */
+esp_err_t ultrasonic_measure_raw(const ultrasonic_sensor_t *dev, uint32_t max_time_us, uint32_t *time_us);  
+
+/**
  * @brief Measure distance in meters
  *
  * @param dev Pointer to the device descriptor
