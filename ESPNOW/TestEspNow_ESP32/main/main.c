@@ -36,6 +36,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
+static QueueHandle_t sensor_data_queue;
 
 
 static const char *TAG = "espnow_example";
@@ -62,14 +63,8 @@ void app_main(void)
     printf("ESP now init");
     
 
-    init_ultrasonic_sensor();
 
-    //array for stock the result and his pointer
-    /*
-    u_int8_t result[MAX_PAYLOAD_SIZE];
-    u_int8_t *pResult = &result[0];
-    */
-
+ 
     while (true) {
         float distance1 = measure_distance();
 
