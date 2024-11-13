@@ -251,16 +251,8 @@ static void example_espnow_task(void *pvParameter)
                         ESP_LOGI(TAG, "send data for handshaking to "MACSTR"", MAC2STR(send_cb->mac_addr));
                         espnow_datasending(send_param, (uint8_t *)"SdLead,", send_cb->mac_addr);  
                         send_param->pingpong = false;
-                        //Frame_counter--;
-                        Receiver_counter = CUSTOM_SEND_COUNT;
                         printf("pass from sender to receiver Frame_counter = %u Recive counter= %u\n", Frame_counter, Receiver_counter);
 
-                        if (Frame_counter == 0) {
-                            ESP_LOGI(TAG, "Frame sent turn off the frame");
-                            espnow_datasending(send_param, (uint8_t *)"ENDING", send_cb->mac_addr);
-                            example_espnow_deinit(send_param);
-                            vTaskDelete(NULL);
-                        }
                         break;
                     }
                     
@@ -372,9 +364,6 @@ static void example_espnow_task(void *pvParameter)
                     /* SENDING THE ACK*/
                     send_param->count = CUSTOM_SEND_COUNT;
                     send_param->pingpong = true;
-                    //TEST WHICH ONE IS THE BEST
-                    
-                    //example_espnow_data_prepare(send_param,parserMessage)
                     espnow_datasending(send_param, parserMessage, recv_cb->mac_addr);
                     ESP_LOGD(TAG, "The mac adress copied  is : "MACSTR"", MAC2STR(send_param->dest_mac));
 

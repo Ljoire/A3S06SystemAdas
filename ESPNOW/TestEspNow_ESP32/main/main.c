@@ -55,26 +55,14 @@ void app_main(void)
     example_wifi_init();
     printf("wifi initialized");
     example_espnow_send_param_t *send_param = SendingParamCreator();
-    /*
-    example_espnow_event_t evt;
-    evt.id = EXAMPLE_ESPNOW_SEND_CB;
-
-    if(send_param == NULL){
-        ESP_LOGE(TAG,"error when allocating the memory for the sending parameter");
-    }
-
-    if (s_example_espnow_queue == NULL) {
-        ESP_LOGE(TAG, "Queue not initialized, cannot send event.");
-        return;    
-    }*/
-
+    
     if(example_espnow_init(send_param) != ESP_OK){
         ESP_LOGE(TAG,"error during the initialization of espnow");        
     }
     
 
     printf("ESP now init");
-    
+
     ESP_LOGE(TAG,"Ending wait :");
     //array for stock the result and his pointer
     u_int8_t result[MAX_PAYLOAD_SIZE];
