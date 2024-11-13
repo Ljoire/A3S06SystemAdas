@@ -43,8 +43,7 @@ static const char *TAG = "espnow_example";
 void app_main(void)
 {
     esp_err_t ret = nvs_flash_init();
-    example_espnow_event_t evt;
-    evt.id = EXAMPLE_ESPNOW_SEND_CB;
+
 
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK( nvs_flash_erase() );
@@ -56,14 +55,27 @@ void app_main(void)
     example_wifi_init();
     printf("wifi initialized");
     example_espnow_send_param_t *send_param = SendingParamCreator();
+    /*
+    example_espnow_event_t evt;
+    evt.id = EXAMPLE_ESPNOW_SEND_CB;
+
     if(send_param == NULL){
         ESP_LOGE(TAG,"error when allocating the memory for the sending parameter");
     }
+
+    if (s_example_espnow_queue == NULL) {
+        ESP_LOGE(TAG, "Queue not initialized, cannot send event.");
+        return;    
+    }*/
+
     if(example_espnow_init(send_param) != ESP_OK){
         ESP_LOGE(TAG,"error during the initialization of espnow");        
     }
-    printf("ESP now init");
+    
 
+    printf("ESP now init");
+    
+    ESP_LOGE(TAG,"Ending wait :");
     //array for stock the result and his pointer
     u_int8_t result[MAX_PAYLOAD_SIZE];
     u_int8_t *pResult = &result[0];
@@ -76,15 +88,19 @@ void app_main(void)
             //if we find a critacal distance we copy the value inside the table
             memcpy(result,&distance1,sizeof(MAX_PAYLOAD_SIZE));
             ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance1);
-            example_espnow_data_prepare(send_param, pResult);
-
+            if(send_param->state == 1){
+                espnow_datasending(send_param, (uint8_t*) "D2crit",send_param->dest_mac);
+            }    
             //we post an order to send data via xQueueSend
-            if (xQueueSend(s_example_espnow_queue, &evt.id, ESPNOW_MAXDELAY) != pdTRUE) {
-                ESP_LOGW(TAG, "Send send queue fail");
-            }
-        } else if (distance2 >= 0 && distance2 < CRITICAL_DISTANCE_CM) {
+            ESP_LOGI(TAG, "will be sent");
+
+        } 
+        else if (distance2 >= 0 && distance2 < CRITICAL_DISTANCE_CM) {
             ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance2);
-            //esp_now_send(NULL, (uint8_t *)&distance2, sizeof(distance2));
+            if(send_param->state == 1){
+                espnow_datasending(send_param, (uint8_t*) "D2crit",send_param->dest_mac);
+            }            
+            
         } 
         else{
             ESP_LOGI(TAG, "No critical object detected. Distance1: %.2f cm, Distance2: %.2f cm", distance1, distance2);

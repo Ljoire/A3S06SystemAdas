@@ -47,7 +47,7 @@
 #define ESPNOW_MAXDELAY             512
 
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, s_example_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
-
+static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static QueueHandle_t s_example_espnow_queue;
 
 typedef enum {
@@ -154,7 +154,7 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 static void example_espnow_task(void *pvParameter);
 
 //add *pvParameter
-esp_err_t example_espnow_init(void *pvParameter);
+esp_err_t example_espnow_init(void *send_param);
 
 /* Unitialize the espnow and free all the data*/
 void example_espnow_deinit(example_espnow_send_param_t *send_param);

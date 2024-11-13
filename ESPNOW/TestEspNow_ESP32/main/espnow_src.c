@@ -24,7 +24,6 @@ static const char *TAG = "espnow_example";
 
 static QueueHandle_t s_example_espnow_queue;
 
-static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
 
 void example_espnow_deinit(example_espnow_send_param_t *send_param);
@@ -175,10 +174,6 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_
 
 }
 
-u_int8_t message[8] = "toto";
-u_int8_t *Pmessage = message;
-
-
 int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message, const uint8_t *desMAC){
     /* Delay a while before sending the next data. */
     if (send_param->delay > 0) {
@@ -195,7 +190,7 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 
     /* Send the data after preparation. */
     if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
-        ESP_LOGE(TAG, "Send error");
+        ESP_LOGE(TAG, "Send error in the function");
         example_espnow_deinit(send_param);
         vTaskDelete(NULL);  // Optionally terminate the task.
         return -1;
@@ -234,14 +229,16 @@ static void example_espnow_task(void *pvParameter)
     {
         switch (evt.id) {
             case EXAMPLE_ESPNOW_SEND_CB: {
+                ESP_LOGI(TAG,"We passing in the send cb");
                 example_espnow_event_send_cb_t *send_cb = &evt.info.send_cb;
                 is_broadcast = IS_BROADCAST_ADDR(send_cb->mac_addr);
-                ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
                 if (is_broadcast && (send_param->broadcast == false)) 
                 {
+                    ESP_LOGI(TAG, "send_param is not in broadcast but adress is in broadcast");
                     break;
                 }
 
+                ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
                 if (!is_broadcast) 
                 {
                     if (send_param->pingpong == false) {
@@ -287,7 +284,7 @@ static void example_espnow_task(void *pvParameter)
 
             case EXAMPLE_ESPNOW_RECV_CB: {
                 example_espnow_event_recv_cb_t *recv_cb = &evt.info.recv_cb;
-
+                ESP_LOGI(TAG,"We passing in the recv cb");
                 ret = example_espnow_data_parse(recv_cb->data, recv_cb->data_len, &recv_state, &recv_seq, &recv_magic, recv_payload, sizeof(recv_payload));
                 free(recv_cb->data);
                 if (ret == EXAMPLE_ESPNOW_DATA_BROADCAST) {
@@ -334,11 +331,12 @@ static void example_espnow_task(void *pvParameter)
                         */
 
                             ESP_LOGI(TAG, "We suspend the task for call it back in a main function");
-                            //vTaskSuspend(&ESPNOW_data_handler);
                             
                             send_param->broadcast = false;
                             send_param->unicast = true;
                             send_param->pingpong = false;// We have to set pingpong to true when we want to send some data in the main
+                            memcpy(send_param->dest_mac,recv_cb->mac_addr,ESP_NOW_ETH_ALEN);
+                            ESP_LOGI(TAG, "The mac adress copied  is : "MACSTR"", MAC2STR(send_param->dest_mac));
                             break;
                         //}
                     }
@@ -378,6 +376,7 @@ static void example_espnow_task(void *pvParameter)
                     
                     //example_espnow_data_prepare(send_param,parserMessage)
                     espnow_datasending(send_param, parserMessage, recv_cb->mac_addr);
+                    ESP_LOGD(TAG, "The mac adress copied  is : "MACSTR"", MAC2STR(send_param->dest_mac));
 
                     //vTaskSuspend(&ESPNOW_data_handler);
                 } else {
@@ -390,7 +389,7 @@ static void example_espnow_task(void *pvParameter)
                 ESP_LOGE(TAG, "Callback type error: %d", evt.id);
                 break;
         }
-        printf("out of the while \n");
+        printf("out of the switch \n");
         
     }
 }
