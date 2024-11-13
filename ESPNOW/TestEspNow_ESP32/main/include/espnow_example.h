@@ -101,6 +101,7 @@ typedef struct {
     bool unicast;                         //Send unicast ESPNOW data.
     bool broadcast;                       //Send broadcast ESPNOW data.
     bool pingpong;                       //Define the sender and receiver 
+    bool error;
 } example_espnow_send_param_t;
 
 #endif
@@ -149,8 +150,11 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 static void example_espnow_task(void *pvParameter);
 
 //add *pvParameter
-esp_err_t example_espnow_init(void);
+esp_err_t example_espnow_init(void *pvParameter);
 
-/* Unitialize the */
+/* Unitialize the espnow and free all the data*/
 void example_espnow_deinit(example_espnow_send_param_t *send_param);
+
+/* Create the sendingParameter for being used for the other function*/
+example_espnow_send_param_t *SendingParamCreator(void);
 

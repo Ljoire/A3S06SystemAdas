@@ -1,13 +1,13 @@
-
+/*
+*   SENSOR CODE 
+*/
 #include "driver/gpio.h"
 #include "esp_timer.h"
 #include "esp_rom_sys.h"
 #include "ultrasonic.h"
 
 
-
-
-
+/* Initialization of the sensor*/
 void init_ultrasonic_sensor() {
     gpio_set_direction(TRIG_PIN_1, GPIO_MODE_OUTPUT);
     gpio_set_direction(ECHO_PIN_1, GPIO_MODE_INPUT);
@@ -15,6 +15,9 @@ void init_ultrasonic_sensor() {
     gpio_set_direction(ECHO_PIN_2, GPIO_MODE_INPUT);
 }
 
+/*  measure of the distance for one sensor
+*   INPUT : Pin for triger and echo (int)
+*   OUTPUT: Floating number who represent the distance*/
 float measure_distance(int trig_pin, int echo_pin) {
     gpio_set_level(trig_pin, 0);
     esp_rom_delay_us(2);

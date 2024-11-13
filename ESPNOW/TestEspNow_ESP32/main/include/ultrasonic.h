@@ -1,4 +1,3 @@
-
 #define TRIG_PIN_1 4
 #define ECHO_PIN_1 5
 #define TRIG_PIN_2 18

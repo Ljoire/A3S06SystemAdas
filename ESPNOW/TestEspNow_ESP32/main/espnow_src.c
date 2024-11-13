@@ -18,10 +18,7 @@
 #define FRAMELEN 18
 #define MAX_PAYLOAD_SIZE 8
 #define CUSTOM_SEND_COUNT 2
-
-
 #define FRAMECOUNTER 5
-
 #define ESPNOW_MAXDELAY 512
 
 static const char *TAG = "espnow_example";
@@ -410,9 +407,9 @@ static void example_espnow_task(void *pvParameter)
 }
 
 //add *pvParameter
-esp_err_t example_espnow_init(void)
+esp_err_t example_espnow_init(void *pvParameter)
 {
-    example_espnow_send_param_t *send_param; //= (example_espnow_send_param_t *)pvParameter;
+    example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
 
     s_example_espnow_queue = xQueueCreate(ESPNOW_QUEUE_SIZE, sizeof(example_espnow_event_t));
     if (s_example_espnow_queue == NULL) {
@@ -446,14 +443,23 @@ esp_err_t example_espnow_init(void)
     ESP_ERROR_CHECK( esp_now_add_peer(peer) );
     free(peer);
 
+    // put from 2048 to 3062 cancel the stack overflow no overflow with 2064
+    //This task will took the brodcast data
+    xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL);
+    return ESP_OK;
+}
+
+example_espnow_send_param_t *SendingParamCreator(void){
     /* Initialize sending parameters. */
 //will be commented
+    example_espnow_send_param_t *send_param;
     send_param = malloc(sizeof(example_espnow_send_param_t));
+    send_param->error = false;
     if (send_param == NULL) {
         ESP_LOGE(TAG, "Malloc send parameter fail");
         vSemaphoreDelete(s_example_espnow_queue);
         esp_now_deinit();
-        return ESP_FAIL;
+        return NULL;
     }
 
     memset(send_param, 0, sizeof(example_espnow_send_param_t));
@@ -472,16 +478,13 @@ esp_err_t example_espnow_init(void)
         free(send_param);
         vSemaphoreDelete(s_example_espnow_queue);
         esp_now_deinit();
-        return ESP_FAIL;
+        return NULL;
     }
-
 
     memcpy(send_param->dest_mac, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
     example_espnow_data_prepare(send_param,(uint8_t*) "DBRODAT");
-    // put from 2048 to 3062 cancel the stack overflow no overflow with 2064
-    //This task will took the brodcast data
-    xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL);
-    return ESP_OK;
+
+    return send_param;
 }
 
 void example_espnow_deinit(example_espnow_send_param_t *send_param)

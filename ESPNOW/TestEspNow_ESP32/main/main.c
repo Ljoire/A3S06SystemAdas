@@ -8,9 +8,15 @@
 */
 
 /*
-   This example shows how to use ESPNOW.
-   Prepare two device, one for sending ESPNOW data and another for receiving
-   ESPNOW data.
+   This code is our final year project
+   School : ESME
+   Location : France, Ivry-sur-Seine
+   Author : 
+        ANDRIANJAFINDRADILO Sitraka Marc
+        RAFFOUX Pol-Eloi
+        JOIRE Leon
+    The project is an ADAS system with communication in v2v (Vehicule 2 Vehicule)
+
 */
 #include <stdlib.h>
 #include <time.h>
@@ -46,7 +52,13 @@ void app_main(void)
     init_ultrasonic_sensor();
     example_wifi_init();
     printf("wifi initialized");
-    example_espnow_init();
+    example_espnow_send_param_t *send_param = SendingParamCreator();
+    if(send_param == NULL){
+        ESP_LOGE(TAG,"error when allocating the memory for the sending parameter");
+    }
+    if(example_espnow_init(send_param) != ESP_OK){
+        ESP_LOGE(TAG,"error during the initialization of espnow");        
+    }
     printf("ESP now init");
     while (true) {
         float distance1 = measure_distance(TRIG_PIN_1, ECHO_PIN_1);
