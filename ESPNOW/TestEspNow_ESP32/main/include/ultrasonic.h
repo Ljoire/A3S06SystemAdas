@@ -5,6 +5,10 @@
 #define ROUNDTRIP_CM 58
 #define SPEED_OF_SOUND_AT_0C_M_S 331.4 // Speed of sound in m/s at 0 degrees Celsius
 
+#define ESP_ERR_ULTRASONIC_PING         0x200
+#define ESP_ERR_ULTRASONIC_PING_TIMEOUT 0x201
+#define ESP_ERR_ULTRASONIC_ECHO_TIMEOUT 0x202
+
 
 /**
  * Device descriptor
@@ -35,3 +39,5 @@ esp_err_t ultrasonic_init(const ultrasonic_sensor_t *dev);
  *         - ::ESP_ERR_ULTRASONIC_ECHO_TIMEOUT - Distance is too big or wave is scattered
  */
 esp_err_t ultrasonic_measure(const ultrasonic_sensor_t *dev, float max_distance, float *distance);
+
+void ultrasonic_task(void *pvParameters);

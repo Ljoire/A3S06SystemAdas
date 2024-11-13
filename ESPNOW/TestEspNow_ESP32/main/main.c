@@ -1,4 +1,4 @@
-/* ESPNOW Example
+/* ADAS SYTEMS
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -43,6 +43,8 @@ static const char *TAG = "espnow_example";
 
 void app_main(void)
 {
+    xTaskCreate(ultrasonic_task, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    /*
     esp_err_t ret = nvs_flash_init();
 
 
@@ -85,4 +87,5 @@ void app_main(void)
 
         vTaskDelay(pdMS_TO_TICKS(1000)); 
     }
+    */
 }
