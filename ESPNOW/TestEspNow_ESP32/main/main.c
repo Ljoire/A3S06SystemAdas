@@ -1,4 +1,4 @@
-/* ESPNOW Example
+/* ADAS SYTEMS
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -36,12 +36,15 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
+static QueueHandle_t sensor_data_queue;
 
 
 static const char *TAG = "espnow_example";
 
 void app_main(void)
 {
+    xTaskCreate(ultrasonic_task, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    /*
     esp_err_t ret = nvs_flash_init();
 
 
@@ -62,14 +65,8 @@ void app_main(void)
     printf("ESP now init");
     
 
-    init_ultrasonic_sensor();
 
-    //array for stock the result and his pointer
-    /*
-    u_int8_t result[MAX_PAYLOAD_SIZE];
-    u_int8_t *pResult = &result[0];
-    */
-
+ 
     while (true) {
         float distance1 = measure_distance();
 
@@ -90,4 +87,5 @@ void app_main(void)
 
         vTaskDelay(pdMS_TO_TICKS(1000)); 
     }
+    */
 }

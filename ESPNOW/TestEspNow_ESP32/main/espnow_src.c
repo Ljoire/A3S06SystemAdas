@@ -232,6 +232,16 @@ static void example_espnow_task(void *pvParameter)
                 ESP_LOGI(TAG,"We passing in the send cb");
                 example_espnow_event_send_cb_t *send_cb = &evt.info.send_cb;
                 is_broadcast = IS_BROADCAST_ADDR(send_cb->mac_addr);
+
+                //if we have an error launch again
+                if(send_cb->status != ESP_NOW_SEND_SUCCESS){
+                    ESP_LOGE(TAG, "status callback error");
+                    example_espnow_deinit(send_param);  
+                    example_espnow_init(send_param);
+                    break;                  
+                }
+
+                //if data is broadcast and the parameter for broadcast is false we break
                 if (is_broadcast && (send_param->broadcast == false)) 
                 {
                     ESP_LOGI(TAG, "send_param is not in broadcast but adress is in broadcast");
@@ -245,19 +255,20 @@ static void example_espnow_task(void *pvParameter)
                         printf("not my turn to send \n");
                         break;
                     }
-                    printf("Sending counter = %u\n", send_param->count);
-                    if (send_param->count == 0) 
-                    {
-                        ESP_LOGI(TAG, "send data for handshaking to "MACSTR"", MAC2STR(send_cb->mac_addr));
-                        espnow_datasending(send_param, (uint8_t *)"SdLead,", send_cb->mac_addr);  
+                    //DEBUG printf("Sending counter = %u\n", send_param->count);
+                    if (send_param->count == 0) {
+                    
+                        ESP_LOGI(TAG, "we have finished the transmission");
+                        //espnow_datasending(send_param, (uint8_t *)"SdLead,", send_cb->mac_addr);  
                         send_param->pingpong = false;
-                        printf("pass from sender to receiver Frame_counter = %u Recive counter= %u\n", Frame_counter, Receiver_counter);
+                        //printf("pass from sender to receiver Frame_counter = %u Recive counter= %u\n", Frame_counter, Receiver_counter);
 
                         break;
                     }
                     
+                    //continue to send the same data
                     send_param->count--;
-                    /* Send the sensor data after preparation in upper function. */
+                    // Send the sensor data after preparation in upper function. 
                     if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
                         ESP_LOGE(TAG, "Send error");
                         example_espnow_deinit(send_param);
@@ -266,7 +277,7 @@ static void example_espnow_task(void *pvParameter)
                     }
                     //suspend the task until further execution
                     //vTaskSuspend(&ESPNOW_data_handler);
-                    //espnow_datasending(send_param, (uint8_t *)"UNIDATA", send_cb->mac_addr);
+                    //espnow_datasending(send_param, (uint8_t *)"UNIDATA", send_cb->mac_addr);*/
                     break;
                 }
 
@@ -275,10 +286,13 @@ static void example_espnow_task(void *pvParameter)
             }
 
             case EXAMPLE_ESPNOW_RECV_CB: {
+                //ESP_LOGI(TAG,"We passing in the recv cb");
+
                 example_espnow_event_recv_cb_t *recv_cb = &evt.info.recv_cb;
-                ESP_LOGI(TAG,"We passing in the recv cb");
+
                 ret = example_espnow_data_parse(recv_cb->data, recv_cb->data_len, &recv_state, &recv_seq, &recv_magic, recv_payload, sizeof(recv_payload));
                 free(recv_cb->data);
+
                 if (ret == EXAMPLE_ESPNOW_DATA_BROADCAST) {
                     ESP_LOGI(TAG, "Receive %dth broadcast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
 
@@ -321,8 +335,6 @@ static void example_espnow_task(void *pvParameter)
                             break;
                         } else {
                         */
-
-                            ESP_LOGI(TAG, "We suspend the task for call it back in a main function");
                             
                             send_param->broadcast = false;
                             send_param->unicast = true;
@@ -343,7 +355,7 @@ static void example_espnow_task(void *pvParameter)
                     printf(" is the data parsed \n");
                     //Send the parsed data
                     
-                    //ACK To integrate latere
+                    //ACK To integrate later
                     parserMessage[sizeof(recv_payload)] = 'K';
                     send_param->broadcast = false;
 
