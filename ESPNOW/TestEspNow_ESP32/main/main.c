@@ -60,7 +60,7 @@ void app_main(void)
         ESP_LOGE(TAG,"error during the initialization of espnow");        
     }
     printf("ESP now init");
-    
-    xTaskCreate(ultrasonic_task, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, NULL, 6, NULL);
+    xTaskCreate(ultrasonic_task, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, NULL, 2, NULL);
+    //vTaskStartScheduler();
     
 }

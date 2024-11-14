@@ -31,8 +31,8 @@ static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 #define TRIGGER_GPIO 5
 #define ECHO_GPIO 18
-#define TRIGGER_GPIO_2 19
-#define ECHO_GPIO_2 21
+#define TRIGGER_GPIO_2 5
+#define ECHO_GPIO_2 18
 #define SENSOR_SEND_QUEUE_SIZE 10
 
 esp_err_t ultrasonic_measure_raw(const ultrasonic_sensor_t *dev, uint32_t max_time_us, uint32_t *time_us)

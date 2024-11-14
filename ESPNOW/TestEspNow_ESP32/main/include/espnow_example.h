@@ -120,6 +120,8 @@ static QueueHandle_t s_example_espnow_queue;
  */
 extern QueueHandle_t sensor_data_queue;
 
+extern QueueHandle_t receive_calback_queu;
+
 /**
  * @brief Identifie le type d'événement dans le callback ESPNOW.
  *
