@@ -9,6 +9,7 @@
 #define ESP_ERR_ULTRASONIC_PING_TIMEOUT 0x201
 #define ESP_ERR_ULTRASONIC_ECHO_TIMEOUT 0x202
 
+static QueueHandle_t sensor_data_queue;
 
 /**
  * Device descriptor

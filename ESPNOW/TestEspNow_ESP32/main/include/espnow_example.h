@@ -153,6 +153,8 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 */
 static void example_espnow_task(void *pvParameter);
 
+void espnow_sending_task(void *pvParameter);
+
 //add *pvParameter
 esp_err_t example_espnow_init(void *send_param);
 

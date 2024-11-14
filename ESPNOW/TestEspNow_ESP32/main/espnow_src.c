@@ -13,6 +13,7 @@
    ESPNOW data.
 */
 #include "espnow_example.h"
+#include "ultrasonic.h"
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
@@ -23,6 +24,9 @@
 static const char *TAG = "espnow_example";
 
 static QueueHandle_t s_example_espnow_queue;
+
+
+
 
 static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
 
@@ -190,7 +194,7 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 
     /* Send the data after preparation. */
     if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
-        ESP_LOGE(TAG, "Send error in the function");
+        ESP_LOGI(TAG, "Send error in the function");
         example_espnow_deinit(send_param);
         vTaskDelete(NULL);  // Optionally terminate the task.
         return -1;
@@ -395,6 +399,20 @@ static void example_espnow_task(void *pvParameter)
     }
 }
 
+void espnow_sending_task(void *pvParameter) {
+    example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
+    uint8_t sensor_data[MAX_PAYLOAD_SIZE];
+    while(true){
+        if (xQueueReceive(sensor_data_queue, sensor_data, portMAX_DELAY)) {
+                // Appel de la fonction d'envoi ESPNOW avec les données reçues
+                ESP_LOGD(TAG,"Inside the sending task function");
+                //espnow_datasending(send_param, sensor_data, send_param->dest_mac);
+
+                // Délai pour éviter un envoi excessif
+                vTaskDelay(pdMS_TO_TICKS(100));  // Ajustez le délai selon les besoins
+            }
+    }
+}
 
 esp_err_t example_espnow_init(void *pvParameter)
 {
@@ -435,6 +453,7 @@ esp_err_t example_espnow_init(void *pvParameter)
     // put from 2048 to 3062 cancel the stack overflow no overflow with 2064
     //This task will took the brodcast data
     xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL);
+    xTaskCreate(espnow_sending_task,"esp_now_sending_task",configMINIMAL_STACK_SIZE * 3,send_param, 3,NULL);
     return ESP_OK;
 }
 
