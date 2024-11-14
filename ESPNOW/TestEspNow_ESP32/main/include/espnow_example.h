@@ -42,13 +42,17 @@
 #define ESPNOW_WIFI_IF   ESP_IF_WIFI_AP
 #endif
 
+#define SENSOR_SEND_QUEUE_SIZE      10
 #define ESPNOW_QUEUE_SIZE           6
 #define MAX_PAYLOAD_SIZE            8
 #define ESPNOW_MAXDELAY             512
 
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, s_example_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
 static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+
 static QueueHandle_t s_example_espnow_queue;
+
+extern QueueHandle_t sensor_data_queue;
 
 typedef enum {
     EXAMPLE_ESPNOW_SEND_CB,

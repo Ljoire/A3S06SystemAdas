@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "driver/gpio.h"
 #include "esp_timer.h"
 
@@ -101,12 +102,6 @@ esp_err_t ultrasonic_init(const ultrasonic_sensor_t *dev)
     CHECK(gpio_set_direction(dev->trigger_pin, GPIO_MODE_OUTPUT));
     CHECK(gpio_set_direction(dev->echo_pin, GPIO_MODE_INPUT));
 
-    sensor_data_queue = xQueueCreate(SENSOR_SEND_QUEUE_SIZE, MAX_PAYLOAD_SIZE);
-    if (sensor_data_queue == NULL) {
-        ESP_LOGE(TAG, "Failed to create sensor data queue");
-        return ESP_FAIL;
-    }
-
     return gpio_set_level(dev->trigger_pin, 0);
 }
 
@@ -123,7 +118,7 @@ void ultrasonic_task(void *pvParameters)
     while (true)
     {
         float distance;
-        uint8_t sensor_data[MAX_PAYLOAD_SIZE];
+        //uint8_t sensor_data[MAX_PAYLOAD_SIZE];
 
         esp_err_t res = ultrasonic_measure(&sensor, MAX_DISTANCE_CM, &distance);
         if (res != ESP_OK)
@@ -149,10 +144,15 @@ void ultrasonic_task(void *pvParameters)
             if(distance*100 <= 20){
                 ESP_LOGI(TAG,"We send data to the queue ");
                 // Poster les données dans la queue
-                snprintf((char *)sensor_data, MAX_PAYLOAD_SIZE, "D1:%.2f", distance);
+                //snprintf((char *)sensor_data, MAX_PAYLOAD_SIZE, "D1:%.2f", distance);
+                char *sensor_data = "ErrorCa";
+                if(sensor_data_queue == NULL){
+                    printf("error the queu is NULL \n");
+                }
                 if (xQueueSend(sensor_data_queue, sensor_data, 0) != pdTRUE) {
                     ESP_LOGW(TAG, "Failed to post sensor data to queue");
                 }
+                ESP_LOGI(TAG,"Data send throught the queu");
             }
         }
         vTaskDelay(pdMS_TO_TICKS(500));
