@@ -10,6 +10,29 @@
 #ifndef ESPNOW_EXAMPLE_H
 #define ESPNOW_EXAMPLE_H
 
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <assert.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/timers.h"
+#include "nvs_flash.h"
+#include "esp_random.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "esp_wifi.h"
+#include "esp_log.h"
+#include "esp_mac.h"
+#include "esp_now.h"
+#include "esp_crc.h"
+#include "driver/gpio.h"
+#include "freertos/task.h"
+#include "esp_timer.h"
+#include "esp_rom_sys.h"
+
+
+
 /* ESPNOW can work in both station and softap mode. It is configured in menuconfig. */
 #if CONFIG_ESPNOW_WIFI_MODE_STATION
 #define ESPNOW_WIFI_MODE WIFI_MODE_STA
@@ -20,8 +43,12 @@
 #endif
 
 #define ESPNOW_QUEUE_SIZE           6
+#define MAX_PAYLOAD_SIZE            8
+#define ESPNOW_MAXDELAY             512
 
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, s_example_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
+static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+static QueueHandle_t s_example_espnow_queue;
 
 typedef enum {
     EXAMPLE_ESPNOW_SEND_CB,
@@ -68,23 +95,24 @@ typedef struct {
 
 /* Parameters of sending ESPNOW data. */
 typedef struct {
+    uint8_t dest_mac[ESP_NOW_ETH_ALEN];   //MAC address of destination device.
+    uint16_t count;                       //Total count of unicast ESPNOW data to be sent.
+    uint16_t delay;                       //Delay between sending two ESPNOW data, unit: ms.
+    uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
+    uint8_t magic;                       //Magic number which is used to determine which device to send unicast ESPNOW data.
+    u_int8_t len;                              //Length of ESPNOW data to be sent, unit: byte.
+    uint8_t *buffer;                      //Buffer pointing to ESPNOW data.
     bool unicast;                         //Send unicast ESPNOW data.
     bool broadcast;                       //Send broadcast ESPNOW data.
     bool pingpong;                       //Define the sender and receiver 
-    uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
-    uint8_t magic;                       //Magic number which is used to determine which device to send unicast ESPNOW data.
-    uint16_t count;                       //Total count of unicast ESPNOW data to be sent.
-    uint16_t delay;                       //Delay between sending two ESPNOW data, unit: ms.
-    u_int8_t len;                              //Length of ESPNOW data to be sent, unit: byte.
-    uint8_t *buffer;                      //Buffer pointing to ESPNOW data.
-    uint8_t dest_mac[ESP_NOW_ETH_ALEN];   //MAC address of destination device.
+    bool error;
 } example_espnow_send_param_t;
 
 #endif
 
 /*--------- PARAMETER CONFIGURATION ---------*/
 /* WiFi should start before using ESPNOW */
-static void example_wifi_init(void);
+void example_wifi_init(void);
 
 /* ESPNOW sending or receiving callback function is called in WiFi task.
  * Users should not do lengthy operations from this task. Instead, post
@@ -126,7 +154,11 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 static void example_espnow_task(void *pvParameter);
 
 //add *pvParameter
-static esp_err_t example_espnow_init(void);
+esp_err_t example_espnow_init(void *send_param);
 
-/* Unitialize the */
-static void example_espnow_deinit(example_espnow_send_param_t *send_param);
+/* Unitialize the espnow and free all the data*/
+void example_espnow_deinit(example_espnow_send_param_t *send_param);
+
+/* Create the sendingParameter for being used for the other function*/
+example_espnow_send_param_t *SendingParamCreator(void);
+

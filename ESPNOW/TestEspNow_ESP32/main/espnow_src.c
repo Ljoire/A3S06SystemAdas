@@ -1,4 +1,4 @@
-/* ESPNOW Example
+ /* ESPNOW Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -12,90 +12,24 @@
    Prepare two device, one for sending ESPNOW data and another for receiving
    ESPNOW data.
 */
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
-#include <assert.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/timers.h"
-#include "nvs_flash.h"
-#include "esp_random.h"
-#include "esp_event.h"
-#include "esp_netif.h"
-#include "esp_wifi.h"
-#include "esp_log.h"
-#include "esp_mac.h"
-#include "esp_now.h"
-#include "esp_crc.h"
 #include "espnow_example.h"
-#include "driver/gpio.h"
-#include "freertos/task.h"
-#include "esp_timer.h"
-#include "esp_rom_sys.h"
-
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
-#define MAX_PAYLOAD_SIZE 8
-#define CUSTOM_SEND_COUNT 2
-#define TRIG_PIN_1 4
-#define ECHO_PIN_1 5
-#define TRIG_PIN_2 18
-#define ECHO_PIN_2 19
-#define CRITICAL_DISTANCE_CM 20
-#define SOUND_SPEED 0.034
-#define TIMEOUT 30000
-
+#define CUSTOM_SEND_COUNT 1
 #define FRAMECOUNTER 5
 
-#define ESPNOW_MAXDELAY 512
 
 static const char *TAG = "espnow_example";
 
 static QueueHandle_t s_example_espnow_queue;
 
-static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
 
-static void example_espnow_deinit(example_espnow_send_param_t *send_param);
-
-TaskHandle_t ESPNOW_data;
-
-void init_ultrasonic_sensor() {
-    gpio_set_direction(TRIG_PIN_1, GPIO_MODE_OUTPUT);
-    gpio_set_direction(ECHO_PIN_1, GPIO_MODE_INPUT);
-    gpio_set_direction(TRIG_PIN_2, GPIO_MODE_OUTPUT);
-    gpio_set_direction(ECHO_PIN_2, GPIO_MODE_INPUT);
-}
-
-float measure_distance(int trig_pin, int echo_pin) {
-    gpio_set_level(trig_pin, 0);
-    esp_rom_delay_us(2);
-    gpio_set_level(trig_pin, 1);
-    esp_rom_delay_us(10);
-    gpio_set_level(trig_pin, 0);
-
-    int64_t start_wait = esp_timer_get_time();
-    while (gpio_get_level(echo_pin) == 0 && esp_timer_get_time() - start_wait < TIMEOUT);
-
-    int64_t start_time = esp_timer_get_time();
-    while (gpio_get_level(echo_pin) == 1 && esp_timer_get_time() - start_time < TIMEOUT);
-    int64_t end_time = esp_timer_get_time();
-
-    int64_t pulse_duration = end_time - start_time;
-    float distance = (pulse_duration / 2.0) * SOUND_SPEED;
-
-    if (pulse_duration >= TIMEOUT) {
-        return -1;
-    }
-
-    return distance;
-}
-
-
+void example_espnow_deinit(example_espnow_send_param_t *send_param);
+ 
 /* WiFi should start before using ESPNOW */
-static void example_wifi_init(void)
+void example_wifi_init(void)
 {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -111,9 +45,8 @@ static void example_wifi_init(void)
 #endif
 }
 
-/* ESPNOW sending or receiving callback function is called in WiFi task.
- * Users should not do lengthy operations from this task. Instead, post
- * necessary data to a queue and handle it from a lower priority task. */
+
+
 static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
     example_espnow_event_t evt;
@@ -132,9 +65,9 @@ static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_
         ESP_LOGW(TAG, "Send send queue fail");
     }
 }
-/* Traitment function of ESPNOW. The functions threat the data, if it was added on the peer list/
-*  Traitment of the error case and liberate the malloc if data received NOK
-*/
+
+
+
 static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len)
 {
     example_espnow_event_t evt;
@@ -172,7 +105,8 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
     }
 }
 
-/* Parse received ESPNOW data. return the state for know how to deal with it */
+
+
 int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, uint8_t *magic, uint8_t *payload, uint8_t payload_len)
 {
     example_espnow_data_t *buf = (example_espnow_data_t *)data;
@@ -240,18 +174,6 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_
 
 }
 
-u_int8_t message[8] = "toto";
-u_int8_t *Pmessage = message;
-
-/* DESCRIPTION OF THE FUNCTION
-*This function concatenate multiple thing
-*Prepare the data in regards of what's specified in parameter
-*Parameter :    
-*               send_param -> the destinations parameter
-*               message -> the message to send. If str use (uint_8t*) Str2Send
-*               desMAC -> the MAC destinations MAC adress usually from send_cb
-*Send the data to the MAC adress specified in parameter
-*Return is OK=0 NOK=1*/
 int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message, const uint8_t *desMAC){
     /* Delay a while before sending the next data. */
     if (send_param->delay > 0) {
@@ -268,18 +190,16 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 
     /* Send the data after preparation. */
     if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
-        ESP_LOGE(TAG, "Send error");
+        ESP_LOGE(TAG, "Send error in the function");
         example_espnow_deinit(send_param);
         vTaskDelete(NULL);  // Optionally terminate the task.
         return -1;
     }
     return 0;
 }
-/* 
-* Task for ESP_NOW sending and receive function
-* Specify a MAC ADRESS FOR BROADCAST DATA before calling this function if you want to send broadcast data
-* The second call will took the adress registred before for sending unidata
-*/
+
+
+
 static void example_espnow_task(void *pvParameter)
 {
     example_espnow_event_t evt;
@@ -309,40 +229,55 @@ static void example_espnow_task(void *pvParameter)
     {
         switch (evt.id) {
             case EXAMPLE_ESPNOW_SEND_CB: {
+                ESP_LOGI(TAG,"We passing in the send cb");
                 example_espnow_event_send_cb_t *send_cb = &evt.info.send_cb;
                 is_broadcast = IS_BROADCAST_ADDR(send_cb->mac_addr);
-                ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
+
+                //if we have an error launch again
+                if(send_cb->status != ESP_NOW_SEND_SUCCESS){
+                    ESP_LOGE(TAG, "status callback error");
+                    example_espnow_deinit(send_param);  
+                    example_espnow_init(send_param);
+                    break;                  
+                }
+
+                //if data is broadcast and the parameter for broadcast is false we break
                 if (is_broadcast && (send_param->broadcast == false)) 
                 {
+                    ESP_LOGI(TAG, "send_param is not in broadcast but adress is in broadcast");
                     break;
                 }
 
+                ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
                 if (!is_broadcast) 
                 {
                     if (send_param->pingpong == false) {
                         printf("not my turn to send \n");
                         break;
                     }
-                    printf("Sending counter = %u\n", send_param->count);
-                    if (send_param->count == 0) 
-                    {
-                        ESP_LOGI(TAG, "send data for handshaking to "MACSTR"", MAC2STR(send_cb->mac_addr));
-                        espnow_datasending(send_param, (uint8_t *)"SdLead,", send_cb->mac_addr);  
+                    //DEBUG printf("Sending counter = %u\n", send_param->count);
+                    if (send_param->count == 0) {
+                    
+                        ESP_LOGI(TAG, "we have finished the transmission");
+                        //espnow_datasending(send_param, (uint8_t *)"SdLead,", send_cb->mac_addr);  
                         send_param->pingpong = false;
-                        Frame_counter--;
-                        Receiver_counter = CUSTOM_SEND_COUNT;
-                        printf("pass from sender to receiver Frame_counter = %u Recive counter= %u\n", Frame_counter, Receiver_counter);
+                        //printf("pass from sender to receiver Frame_counter = %u Recive counter= %u\n", Frame_counter, Receiver_counter);
 
-                        if (Frame_counter == 0) {
-                            ESP_LOGI(TAG, "Frame sent turn off the frame");
-                            espnow_datasending(send_param, (uint8_t *)"ENDING", send_cb->mac_addr);
-                            example_espnow_deinit(send_param);
-                            vTaskDelete(NULL);
-                        }
                         break;
                     }
+                    
+                    //continue to send the same data
                     send_param->count--;
-                    espnow_datasending(send_param, (uint8_t *)"UNIDATA", send_cb->mac_addr);
+                    // Send the sensor data after preparation in upper function. 
+                    if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK) {
+                        ESP_LOGE(TAG, "Send error");
+                        example_espnow_deinit(send_param);
+                        vTaskDelete(NULL);  // Optionally terminate the task.
+                        
+                    }
+                    //suspend the task until further execution
+                    //vTaskSuspend(&ESPNOW_data_handler);
+                    //espnow_datasending(send_param, (uint8_t *)"UNIDATA", send_cb->mac_addr);*/
                     break;
                 }
 
@@ -351,10 +286,13 @@ static void example_espnow_task(void *pvParameter)
             }
 
             case EXAMPLE_ESPNOW_RECV_CB: {
+                //ESP_LOGI(TAG,"We passing in the recv cb");
+
                 example_espnow_event_recv_cb_t *recv_cb = &evt.info.recv_cb;
 
                 ret = example_espnow_data_parse(recv_cb->data, recv_cb->data_len, &recv_state, &recv_seq, &recv_magic, recv_payload, sizeof(recv_payload));
                 free(recv_cb->data);
+
                 if (ret == EXAMPLE_ESPNOW_DATA_BROADCAST) {
                     ESP_LOGI(TAG, "Receive %dth broadcast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
 
@@ -380,8 +318,12 @@ static void example_espnow_task(void *pvParameter)
                     }
 
                     if (recv_state == 1) {
-                        if (send_param->unicast == false && send_param->magic >= recv_magic) {
+                        /*      COMMENT FOR FURTHER USAGE
+                        if (send_param->unicast == false && send_param->magic >= recv_magic) {//map an high value for the sender
+
                             ESP_LOGI(TAG, "We suspend the task for call it back in a main function");
+                            //vTaskSuspend(&ESPNOW_data_handler);
+
                             printf("My magic number is : %d and the received is :%d", send_param->magic, recv_magic);
                             ESP_LOGI(TAG, "Start sending unicast data");
                             ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
@@ -389,25 +331,35 @@ static void example_espnow_task(void *pvParameter)
                             send_param->pingpong = true;
                             send_param->unicast = true;
                             send_param->broadcast = false;
-                            espnow_datasending(send_param, (uint8_t *)"StrUniM", recv_cb->mac_addr);
+                            //espnow_datasending(send_param, (uint8_t *)"StrUniM", recv_cb->mac_addr);
                             break;
                         } else {
-                            ESP_LOGI(TAG, "We suspend the task for call it back in a main function");
+                        */
+                            
                             send_param->broadcast = false;
                             send_param->unicast = true;
-                            send_param->pingpong = false;
+                            send_param->pingpong = false;// We have to set pingpong to true when we want to send some data in the main
+                            memcpy(send_param->dest_mac,recv_cb->mac_addr,ESP_NOW_ETH_ALEN);
+                            ESP_LOGI(TAG, "The mac adress copied  is : "MACSTR"", MAC2STR(send_param->dest_mac));
                             break;
-                        }
+                        //}
                     }
                 } else if (ret == EXAMPLE_ESPNOW_DATA_UNICAST) {
+
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
-                    uint8_t parserMessage[sizeof(recv_payload)];
+                    uint8_t parserMessage[sizeof(recv_payload -1)];
                     for (int i = 0; i < sizeof(recv_payload); i++) {
                         printf("%c ", recv_payload[i]);
                         parserMessage[i] = recv_payload[i];
                     }
                     printf(" is the data parsed \n");
+                    //Send the parsed data
+                    
+                    //ACK To integrate later
+                    parserMessage[sizeof(recv_payload)] = 'K';
                     send_param->broadcast = false;
+
+                    /*
                     uint8_t table[] = "SdLead ";
                     if (parserMessage[0] == table[0]) {
                         printf("Receive all the data\n");
@@ -417,13 +369,17 @@ static void example_espnow_task(void *pvParameter)
                             ESP_LOGI(TAG, "receive done");
                             espnow_datasending(send_param, (uint8_t *)"ENDING", recv_cb->mac_addr);
                             example_espnow_deinit(send_param);
-                            vTaskDelete(NULL);
-                        } else {
-                            send_param->count = CUSTOM_SEND_COUNT + 1;
-                            printf("pass from receiver to sender Frame_counter = %u Count= %u\n", Frame_counter, send_param->count);
-                            espnow_datasending(send_param, (uint8_t *)"TakLead", recv_cb->mac_addr);
-                        }
+                            vTaskDelete(NULL);   
                     }
+                    DEBUG*/
+                    //printf("pass from receiver to sender Frame_counter = %u Count= %u\n", Frame_counter, send_param->count);
+                    /* SENDING THE ACK*/
+                    send_param->count = CUSTOM_SEND_COUNT;
+                    send_param->pingpong = true;
+                    espnow_datasending(send_param, parserMessage, recv_cb->mac_addr);
+                    ESP_LOGD(TAG, "The mac adress copied  is : "MACSTR"", MAC2STR(send_param->dest_mac));
+
+                    //vTaskSuspend(&ESPNOW_data_handler);
                 } else {
                     ESP_LOGI(TAG, "Receive error data from: "MACSTR"", MAC2STR(recv_cb->mac_addr));
                 }
@@ -434,14 +390,15 @@ static void example_espnow_task(void *pvParameter)
                 ESP_LOGE(TAG, "Callback type error: %d", evt.id);
                 break;
         }
-        printf("out of the while \n");
+        printf("out of the switch \n");
+        
     }
 }
 
-//add *pvParameter
-static esp_err_t example_espnow_init(void)
+
+esp_err_t example_espnow_init(void *pvParameter)
 {
-    example_espnow_send_param_t *send_param; //= (example_espnow_send_param_t *)pvParameter;
+    example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
 
     s_example_espnow_queue = xQueueCreate(ESPNOW_QUEUE_SIZE, sizeof(example_espnow_event_t));
     if (s_example_espnow_queue == NULL) {
@@ -475,14 +432,23 @@ static esp_err_t example_espnow_init(void)
     ESP_ERROR_CHECK( esp_now_add_peer(peer) );
     free(peer);
 
+    // put from 2048 to 3062 cancel the stack overflow no overflow with 2064
+    //This task will took the brodcast data
+    xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, NULL);
+    return ESP_OK;
+}
+
+example_espnow_send_param_t *SendingParamCreator(void){
     /* Initialize sending parameters. */
 //will be commented
+    example_espnow_send_param_t *send_param;
     send_param = malloc(sizeof(example_espnow_send_param_t));
+    send_param->error = false;
     if (send_param == NULL) {
         ESP_LOGE(TAG, "Malloc send parameter fail");
         vSemaphoreDelete(s_example_espnow_queue);
         esp_now_deinit();
-        return ESP_FAIL;
+        return NULL;
     }
 
     memset(send_param, 0, sizeof(example_espnow_send_param_t));
@@ -501,57 +467,19 @@ static esp_err_t example_espnow_init(void)
         free(send_param);
         vSemaphoreDelete(s_example_espnow_queue);
         esp_now_deinit();
-        return ESP_FAIL;
+        return NULL;
     }
-
 
     memcpy(send_param->dest_mac, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
     example_espnow_data_prepare(send_param,(uint8_t*) "DBRODAT");
-    // put from 2048 to 3062 cancel the stack overflow no overflow with 2064
-    //This task will took the brodcast data
-    xTaskCreate(example_espnow_task, "example_espnow_task", 2064, send_param, 4, &ESPNOW_data);
-    return ESP_OK;
+
+    return send_param;
 }
 
-static void example_espnow_deinit(example_espnow_send_param_t *send_param)
+void example_espnow_deinit(example_espnow_send_param_t *send_param)
 {
     free(send_param->buffer);
     free(send_param);
     vSemaphoreDelete(s_example_espnow_queue);
     esp_now_deinit();
-}
-
-void app_main(void)
-{
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK( nvs_flash_erase() );
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK( ret );
-
-    init_ultrasonic_sensor();
-    example_wifi_init();
-    printf("wifi initialized");
-    example_espnow_init();
-    printf("ESP now init");
-    while (true) {
-        float distance1 = measure_distance(TRIG_PIN_1, ECHO_PIN_1);
-        float distance2 = measure_distance(TRIG_PIN_2, ECHO_PIN_2);
-
-        if(distance1 >= 0 && distance1 < CRITICAL_DISTANCE_CM){
-            ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance1);
-            esp_now_send(NULL, (uint8_t *)&distance1, sizeof(distance1));
-            /*xTaskCreate(example_espnow_task, "example_espnow_task", 4096, send_param, 4,&ESPNOW_data)*/
-        } else if (distance2 >= 0 && distance2 < CRITICAL_DISTANCE_CM) {
-            ESP_LOGI(TAG, "Critical distance detected: %.2f cm", distance2);
-            esp_now_send(NULL, (uint8_t *)&distance2, sizeof(distance2));
-           /* xTaskCreate(example_espnow_task, "example_espnow_task", 4096, send_param, 4,&ESPNOW_data)*/
-        } 
-        else{
-            ESP_LOGI(TAG, "No critical object detected. Distance1: %.2f cm, Distance2: %.2f cm", distance1, distance2);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(1000)); 
-    }
 }
