@@ -32,7 +32,9 @@ static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 #define TRIGGER_GPIO 5
 #define ECHO_GPIO 18
 #define TRIGGER_GPIO_2 19
-#define ECHO_GPIO_2 21
+#define ECHO_GPIO_2 33
+#define TRIGGER_GPIO_3 25
+#define ECHO_GPIO_3 23
 #define SENSOR_SEND_QUEUE_SIZE 10
 
 esp_err_t ultrasonic_measure_raw(const ultrasonic_sensor_t *dev, uint32_t max_time_us, uint32_t *time_us)
@@ -120,12 +122,18 @@ void ultrasonic_task(void *pvParameters)
         .echo_pin = ECHO_GPIO_2
     };
 
+    ultrasonic_sensor_t sensor3 = {
+        .trigger_pin = TRIGGER_GPIO_3,
+        .echo_pin = ECHO_GPIO_3
+    };
+
     ultrasonic_init(&sensor1);
     ultrasonic_init(&sensor2);
+    ultrasonic_init(&sensor3);
 
     while (true)
     {
-        float distance1, distance2;
+        float distance1, distance2, distance3;
         uint8_t sensor_data[MAX_PAYLOAD_SIZE];
 
         esp_err_t res1 = ultrasonic_measure(&sensor1, MAX_DISTANCE_CM, &distance1);
@@ -161,7 +169,7 @@ void ultrasonic_task(void *pvParameters)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        vTaskDelay(pdMS_TO_TICKS(10));
 
         esp_err_t res2 = ultrasonic_measure(&sensor2, MAX_DISTANCE_CM, &distance2);
         if (res2 != ESP_OK)
@@ -193,6 +201,41 @@ void ultrasonic_task(void *pvParameters)
                     ESP_LOGW(TAG, "Échec de l'envoi des données du capteur 2 dans la queue");
                 }
                 ESP_LOGI(TAG, "Données du Capteur 2 envoyées dans la queue");
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        esp_err_t res3 = ultrasonic_measure(&sensor3, MAX_DISTANCE_CM, &distance3);
+        if (res3 != ESP_OK)
+        {
+            printf("Erreur Capteur 3 %d: ", res3);
+            switch (res3)
+            {
+                case ESP_ERR_ULTRASONIC_PING:
+                    printf("Impossible de ping (capteur dans un état invalide)\n");
+                    break;
+                case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
+                    printf("Ping timeout (aucun capteur trouvé)\n");
+                    break;
+                case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
+                    printf("Echo timeout (distance trop grande)\n");
+                    break;
+                default:
+                    printf("%s\n", esp_err_to_name(res3));
+            }
+        }
+        else
+        {
+            printf("Capteur 3 Distance: %.04f cm\n", distance3 * 100);
+            if (distance3 * 100 <= 20)
+            {
+                ESP_LOGI(TAG, "Capteur 3: Envoi des données dans la queue");
+                if (xQueueSend(sensor_data_queue, sensor_data, 0) != pdTRUE)
+                {
+                    ESP_LOGW(TAG, "Échec de l'envoi des données du capteur 3 dans la queue");
+                }
+                ESP_LOGI(TAG, "Données du Capteur 3 envoyées dans la queue");
             }
         }
 
