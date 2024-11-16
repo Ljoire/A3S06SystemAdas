@@ -115,7 +115,8 @@ esp_err_t ultrasonic_init(const ultrasonic_sensor_t *dev)
 
 void ultrasonic_task(void *pvParameters)
 {
-    ultrasonic_sensor_t sensor1 = {
+    ultrasonic_sensor_t 
+    sensor1 = {
         .trigger_pin = TRIGGER_GPIO_2,
         .echo_pin = ECHO_GPIO_2
     };
@@ -131,8 +132,8 @@ void ultrasonic_task(void *pvParameters)
     };
 
     ultrasonic_init(&sensor1);
-    ultrasonic_init(&sensor2);
-    ultrasonic_init(&sensor3);
+    //ultrasonic_init(&sensor2);
+    //ultrasonic_init(&sensor3);
 
     lcd_init();
 
@@ -182,7 +183,7 @@ void ultrasonic_task(void *pvParameters)
         }
 
         vTaskDelay(pdMS_TO_TICKS(500));
-
+/*
         esp_err_t res2 = ultrasonic_measure(&sensor2, MAX_DISTANCE_CM, &distance2);
         if (res2 != ESP_OK)
         {
@@ -252,7 +253,7 @@ void ultrasonic_task(void *pvParameters)
                 ESP_LOGI(TAG, "Données du Capteur 3 envoyées dans la queue");
             }
         }
-
+*/
         vTaskDelay(pdMS_TO_TICKS(500));
         
     }
