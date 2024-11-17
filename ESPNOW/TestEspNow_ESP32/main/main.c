@@ -25,6 +25,7 @@
 
 #include "espnow_example.h"
 #include "ultrasonic.h"
+#include "lcd.h"
 
 
 #include "driver/gpio.h"

@@ -121,7 +121,7 @@ void lcd_init(void) {
     ESP_ERROR_CHECK(i2c_driver_install(i2c_port, conf.mode, 0, 0, 0));
 
     // Attendre que le LCD soit prêt
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     // Séquence d'initialisation 4 bits
     uint8_t init_seq[] = {0x03, 0x03, 0x03, 0x02};
@@ -132,13 +132,16 @@ void lcd_init(void) {
         
         uint8_t buf[2] = {with_en, without_en};
         i2c_master_write_to_device(i2c_port, LCD_I2C_ADDR, buf, 2, 1000 / portTICK_PERIOD_MS);
-        vTaskDelay(5 / portTICK_PERIOD_MS);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
     // Configuration du LCD
-    lcd_send_cmd(LCD_FUNCTIONSET | 0x08);        // 4-bit, 2 lignes, 5x8 pixels
-    lcd_send_cmd(LCD_DISPLAYCONTROL | 0x04);     // Display ON, pas de curseur
+    lcd_send_cmd(0x3C);//(LCD_FUNCTIONSET | 0x08);        // 4-bit, 2 lignes, 5x8 pixels
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    lcd_send_cmd(0x);//(LCD_DISPLAYCONTROL | 0x04);     // Display ON, pas de curseur
+    vTaskDelay(50 / portTICK_PERIOD_MS);
     lcd_send_cmd(LCD_CLEARDISPLAY);              // Effacer l'écran
+    vTaskDelay(50 / portTICK_PERIOD_MS);
     lcd_send_cmd(LCD_ENTRYMODESET | 0x02);       // Entrée de gauche à droite
 
     ESP_LOGI(TAG, "LCD initialized successfully");
