@@ -1,6 +1,6 @@
 /**
  * @file lcd.c
- * @author your ANDRIANJAFINDRADILO Sitraka Marc (you@domain.com)
+ * @author ANDRIANJAFINDRADILO Sitraka Marc (you@domain.com)
  * @brief 
  * @version 0.1
  * @date 2024-11-16
@@ -78,11 +78,31 @@ static esp_err_t lcd_write_byte(uint8_t cmd, bool is_data) {
 }
 
 static void lcd_send_cmd(uint8_t cmd) {
-    lcd_write_byte(cmd, false);
-    if (cmd == LCD_CLEARDISPLAY || cmd == LCD_RETURNHOME) {
-        vTaskDelay(2 / portTICK_PERIOD_MS);
-    } else {
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+    switch (lcd_write_byte(cmd, false))
+    {
+    case ESP_OK:
+        if (cmd == LCD_CLEARDISPLAY || cmd == LCD_RETURNHOME) {
+            vTaskDelay(2 / portTICK_PERIOD_MS);
+        } else {
+            vTaskDelay(1 / portTICK_PERIOD_MS);
+        }
+        printf("Command OK \n");
+        break;
+    case ESP_ERR_INVALID_ARG:
+        ESP_LOGW(TAG,"invalid arguement when sending command");
+        break;
+    case  ESP_FAIL:
+        ESP_LOGW(TAG,"Sending command error, slave hasn't ACK the transfer.");
+        break;
+    case  ESP_ERR_INVALID_STATE :
+        ESP_LOGW(TAG,"I2C driver not installed or not in master mode ");
+        break;
+    case ESP_ERR_TIMEOUT:
+        ESP_LOGW(TAG,"Operation timeout because the bus is busy.");
+        break;        
+    default:
+        ESP_LOGW(TAG,"Passed in the defaultd case, weird case");
+        break;
     }
 }
 
