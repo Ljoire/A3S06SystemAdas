@@ -91,7 +91,7 @@ static void lcd_send_cmd(uint8_t cmd) {
         ESP_LOGW(TAG,"invalid arguement when sending command");
         break;
     case  ESP_FAIL:
-        ESP_LOGW(TAG,"Sending command error, slave hasn't ACK the transfer.");
+        //ESP_LOGW(TAG,"Sending command error, slave hasn't ACK the transfer.");
         break;
     case  ESP_ERR_INVALID_STATE :
         ESP_LOGW(TAG,"I2C driver not installed or not in master mode ");
@@ -182,8 +182,8 @@ void lcd_task(void *pvParameter){
         lcd_set_cursor(1,1);
         //snprintf(buffer, sizeof(buffer), "Erreur C1");
         //lcd_print(buffer);
-        for(uint8_t i = 0; i <= MAX_PAYLOAD_SIZE &&  pReceivedMessage;i++){
-            lcd_write_byte(*pReceivedMessage,true);
+        for(size_t i = 0; i <= MAX_PAYLOAD_SIZE &&  pReceivedMessage;i++){
+            lcd_write_byte(pReceivedMessage[i],true);
         }
         ESP_LOGI(TAG,"Message displayed on the LCD");
     }
