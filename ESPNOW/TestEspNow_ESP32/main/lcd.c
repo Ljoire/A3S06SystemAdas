@@ -184,7 +184,7 @@ void lcd_task(void *pvParameter){
         //lcd_print(buffer);
         for(size_t i = 0; i <= MAX_PAYLOAD_SIZE &&  pReceivedMessage;i++){
             lcd_write_byte(pReceivedMessage[i],true);
-            printf("data displayed on i : %u ",i);
+            printf("data displayed on i : %u %c",i,pReceivedMessage[i]);
         }
         ESP_LOGI(TAG,"Message displayed on the LCD");
     }
