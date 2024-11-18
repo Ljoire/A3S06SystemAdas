@@ -136,9 +136,9 @@ void lcd_init(void) {
     }
 
     // Configuration du LCD
-    lcd_send_cmd(0x3C);//(LCD_FUNCTIONSET | 0x08);        // 4-bit, 2 lignes, 5x8 pixels
+    lcd_send_cmd(LCD_FUNCTIONSET | 0x08);        // 4-bit, 2 lignes, 5x8 pixels
     vTaskDelay(50 / portTICK_PERIOD_MS);
-    lcd_send_cmd(0x);//(LCD_DISPLAYCONTROL | 0x04);     // Display ON, pas de curseur
+    lcd_send_cmd(LCD_DISPLAYCONTROL | 0x04);     // Display ON, pas de curseur
     vTaskDelay(50 / portTICK_PERIOD_MS);
     lcd_send_cmd(LCD_CLEARDISPLAY);              // Effacer l'écran
     vTaskDelay(50 / portTICK_PERIOD_MS);
