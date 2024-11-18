@@ -179,11 +179,12 @@ void lcd_task(void *pvParameter){
     char *pReceivedMessage = NULL;
     while(xQueueReceive(receive_calback_queu,&pReceivedMessage, portMAX_DELAY) == pdTRUE){ 
         lcd_clear();
-        lcd_set_cursor(1,1);
+        lcd_set_cursor(0,0);
         //snprintf(buffer, sizeof(buffer), "Erreur C1");
         //lcd_print(buffer);
         for(size_t i = 0; i <= MAX_PAYLOAD_SIZE &&  pReceivedMessage;i++){
             lcd_write_byte(pReceivedMessage[i],true);
+            printf("data displayed on i : %u ",i);
         }
         ESP_LOGI(TAG,"Message displayed on the LCD");
     }

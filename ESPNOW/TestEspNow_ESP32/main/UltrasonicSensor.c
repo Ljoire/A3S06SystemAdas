@@ -143,22 +143,22 @@ void ultrasonic_task(void *pvParameters)
         float distance1, distance2, distance3;
         uint8_t sensor_data[MAX_PAYLOAD_SIZE];
         char buffer[16];
-        lcd_clear();
+        //lcd_clear();
 
 
         esp_err_t res1 = ultrasonic_measure(&sensor1, MAX_DISTANCE_CM, &distance1);
         if (res1 != ESP_OK)
         {
-            lcd_set_cursor(0, 0);
-            snprintf(buffer, sizeof(buffer), "Erreur C1");
-            lcd_print(buffer);
+            //lcd_set_cursor(0, 0);
+            //snprintf(buffer, sizeof(buffer), "Erreur C1");
+            //lcd_print(buffer);
             switch (res1)
             {
                 case ESP_ERR_ULTRASONIC_PING:
                     //ESP_LOGW(TAG,"Impossible de ping (capteur dans un état invalide)");
                     break;
                 case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
-                    ESP_LOGW(TAG,"Ping timeout (aucun capteur trouvé)\n");
+                    //ESP_LOGW(TAG,"Ping timeout (aucun capteur trouvé)\n");
                     break;
                 case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
                     ESP_LOGW(TAG,"Echo timeout (distance trop grande)\n");
