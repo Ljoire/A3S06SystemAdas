@@ -86,7 +86,6 @@ static void lcd_send_cmd(uint8_t cmd) {
         } else {
             vTaskDelay(1 / portTICK_PERIOD_MS);
         }
-        printf("Command OK \n");
         break;
     case ESP_ERR_INVALID_ARG:
         ESP_LOGW(TAG,"invalid arguement when sending command");
@@ -172,4 +171,20 @@ void lcd_backlight(bool on) {
     backlight_state = on ? LCD_BL_BIT : 0x00;
     uint8_t data = backlight_state;
     i2c_master_write_to_device(i2c_port, LCD_I2C_ADDR, &data, 1, 1000 / portTICK_PERIOD_MS);
+}
+
+void lcd_task(void *pvParameter){
+    //cast the send_param put as global variable
+    example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
+    char *pReceivedMessage = NULL;
+    while(xQueueReceive(receive_calback_queu,&pReceivedMessage, portMAX_DELAY) == pdTRUE){ 
+        lcd_clear();
+        lcd_set_cursor(1,1);
+        //snprintf(buffer, sizeof(buffer), "Erreur C1");
+        //lcd_print(buffer);
+        for(uint8_t i = 0; i <= MAX_PAYLOAD_SIZE &&  pReceivedMessage;i++){
+            lcd_write_byte(*pReceivedMessage,true);
+        }
+        ESP_LOGI(TAG,"Message displayed on the LCD");
+    }
 }

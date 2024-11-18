@@ -33,10 +33,11 @@ static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 #define TRIGGER_GPIO 5
 #define ECHO_GPIO 18
+/*
 #define TRIGGER_GPIO_2 19
 #define ECHO_GPIO_2 33
 #define TRIGGER_GPIO_3 25
-#define ECHO_GPIO_3 23
+#define ECHO_GPIO_3 23 */
 #define SENSOR_SEND_QUEUE_SIZE 10
 
 
@@ -117,10 +118,10 @@ void ultrasonic_task(void *pvParameters)
 {
     ultrasonic_sensor_t 
     sensor1 = {
-        .trigger_pin = TRIGGER_GPIO_2,
-        .echo_pin = ECHO_GPIO_2
+        .trigger_pin = TRIGGER_GPIO,
+        .echo_pin = ECHO_GPIO
     };
-
+/*
     ultrasonic_sensor_t sensor2 = {
         .trigger_pin = TRIGGER_GPIO_2,
         .echo_pin = ECHO_GPIO_2
@@ -130,7 +131,7 @@ void ultrasonic_task(void *pvParameters)
         .trigger_pin = TRIGGER_GPIO_3,
         .echo_pin = ECHO_GPIO_3
     };
-
+*/
     ultrasonic_init(&sensor1);
     //ultrasonic_init(&sensor2);
     //ultrasonic_init(&sensor3);
@@ -154,23 +155,24 @@ void ultrasonic_task(void *pvParameters)
             switch (res1)
             {
                 case ESP_ERR_ULTRASONIC_PING:
-                    printf("Impossible de ping (capteur dans un état invalide)\n");
+                    //ESP_LOGW(TAG,"Impossible de ping (capteur dans un état invalide)");
                     break;
                 case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
-                    printf("Ping timeout (aucun capteur trouvé)\n");
+                    ESP_LOGW(TAG,"Ping timeout (aucun capteur trouvé)\n");
                     break;
                 case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
-                    printf("Echo timeout (distance trop grande)\n");
+                    ESP_LOGW(TAG,"Echo timeout (distance trop grande)\n");
                     break;
                 default:
-                    printf("%s\n", esp_err_to_name(res1));
+                    ESP_LOGW(TAG,"%s\n", esp_err_to_name(res1));
             }
         }
         else
         {
+            /* Mis en commentaire pour le test d'envoie
             lcd_set_cursor(0, 0); 
             snprintf(buffer, sizeof(buffer), "C1: %.1f cm", distance1 * 100);
-            lcd_print(buffer);
+            lcd_print(buffer);*/
             if (distance1 * 100 <= 20)
             {
                 ESP_LOGI(TAG, "Capteur 1: Envoi des données dans la queue");

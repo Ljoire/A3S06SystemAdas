@@ -21,3 +21,5 @@ void lcd_set_cursor(uint8_t row, uint8_t col);
 void lcd_print(const char* str);
 
 void lcd_backlight(bool on);
+
+extern void lcd_task(void *pvParameter);
