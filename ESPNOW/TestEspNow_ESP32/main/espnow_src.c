@@ -24,8 +24,8 @@
 static const char *TAG = "espnow_example";
 
 static QueueHandle_t s_example_espnow_queue;
-
-
+QueueHandle_t receive_calback_queu;
+QueueHandle_t sensor_data_queue;
 
 
 static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
@@ -164,15 +164,8 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_
     buf->crc = 0;
     buf->magic = send_param->magic;
     
-    /* Fill all remaining bytes after the data with random values */
-    //esp_fill_random(buf->payload, send_param->len - sizeof(example_espnow_data_t));
     /* Copie du payload dans la structure */
-    printf("the message to send is ");
-    for (uint8_t i = 0; i < sizeof(buf->payload); i++)
-    {
-        printf("%c",mes2send[i]);
-    }
-    printf("\n\n");
+    ESP_LOGI(TAG, "the message to send is %s",mes2send);
     memcpy(buf->payload, mes2send, sizeof(buf->payload));
     buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 
@@ -256,7 +249,7 @@ static void example_espnow_task(void *pvParameter)
                 if (!is_broadcast) 
                 {
                     if (send_param->pingpong == false) {
-                        printf("not my turn to send \n");
+                        ESP_LOGW(TAG,"not my turn to send");
                         break;
                     }
                     //DEBUG printf("Sending counter = %u\n", send_param->count);
@@ -353,17 +346,21 @@ static void example_espnow_task(void *pvParameter)
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
                     uint8_t parserMessage[sizeof(recv_payload -1)];
                     for (int i = 0; i < sizeof(recv_payload); i++) {
-                        printf("%c ", recv_payload[i]);
                         parserMessage[i] = recv_payload[i];
                     }
-                    printf(" is the data parsed \n");
-                    //Send the parsed data
-                    
+                    char pParsermessage[sizeof(recv_payload)];
+                    memcpy(pParsermessage,parserMessage,sizeof(recv_payload-1));
+                    ESP_LOGI(TAG,"%s is the data parsed \n",pParsermessage);
+                    //Send the parsed data to the queue for treatment
+                /* NEED TO INTEGRATE SOMETHING FOR SELECT WHERE TO SEND FROM THE PARSED MESSAGE*/
+                    if (xQueueSend(receive_calback_queu, pParsermessage, ESPNOW_MAXDELAY) != pdTRUE) {
+                            ESP_LOGW(TAG, "Send send queue fail");
+                        }
+
+                    /*
                     //ACK To integrate later
                     parserMessage[sizeof(recv_payload)] = 'K';
                     send_param->broadcast = false;
-
-                    /*
                     uint8_t table[] = "SdLead ";
                     if (parserMessage[0] == table[0]) {
                         printf("Receive all the data\n");
@@ -376,8 +373,7 @@ static void example_espnow_task(void *pvParameter)
                             vTaskDelete(NULL);   
                     }
                     DEBUG*/
-                    //printf("pass from receiver to sender Frame_counter = %u Count= %u\n", Frame_counter, send_param->count);
-                    /* SENDING THE ACK*/
+
                     send_param->count = CUSTOM_SEND_COUNT;
                     send_param->pingpong = true;
                     espnow_datasending(send_param, parserMessage, recv_cb->mac_addr);
@@ -394,12 +390,10 @@ static void example_espnow_task(void *pvParameter)
                 ESP_LOGE(TAG, "Callback type error: %d", evt.id);
                 break;
         }
-        printf("out of the switch \n");
+        ESP_LOGI(TAG,"Out of the switch");
         
     }
 }
-
-QueueHandle_t sensor_data_queue;
 
 void espnow_sending_task(void *pvParameter) {
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
@@ -431,6 +425,12 @@ esp_err_t example_espnow_init(void *pvParameter)
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
 
     s_example_espnow_queue = xQueueCreate(ESPNOW_QUEUE_SIZE, sizeof(example_espnow_event_t));
+    if (s_example_espnow_queue == NULL) {
+        ESP_LOGE(TAG, "Create mutex fail");
+        return ESP_FAIL;
+    }
+
+    receive_calback_queu = xQueueCreate(ESPNOW_QUEUE_SIZE,sizeof(uint8_t[MAX_PAYLOAD_SIZE]));
     if (s_example_espnow_queue == NULL) {
         ESP_LOGE(TAG, "Create mutex fail");
         return ESP_FAIL;
@@ -471,7 +471,7 @@ esp_err_t example_espnow_init(void *pvParameter)
 
 example_espnow_send_param_t *SendingParamCreator(void){
     /* Initialize sending parameters. */
-//will be commented
+
     example_espnow_send_param_t *send_param;
     send_param = malloc(sizeof(example_espnow_send_param_t));
     send_param->error = false;

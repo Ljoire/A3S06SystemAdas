@@ -53,6 +53,7 @@ static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0
 static QueueHandle_t s_example_espnow_queue;
 
 extern QueueHandle_t sensor_data_queue;
+extern QueueHandle_t receive_calback_queu;
 
 typedef enum {
     EXAMPLE_ESPNOW_SEND_CB,
