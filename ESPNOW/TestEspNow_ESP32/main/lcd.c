@@ -176,13 +176,14 @@ void lcd_backlight(bool on) {
 void lcd_task(void *pvParameter){
     //cast the send_param put as global variable
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
-    char *pReceivedMessage = NULL;
+    uint8_t *pReceivedMessage = NULL;
     while(xQueueReceive(receive_calback_queu,&pReceivedMessage, portMAX_DELAY) == pdTRUE){ 
         lcd_clear();
         lcd_set_cursor(0,0);
-        //snprintf(buffer, sizeof(buffer), "Erreur C1");
-        //lcd_print(buffer);
-        for(size_t i = 0; i <= MAX_PAYLOAD_SIZE &&  pReceivedMessage;i++){
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "Capteur 1 : ");
+        lcd_print(buffer);
+        for(size_t i = 0; i <= MAX_PAYLOAD_SIZE;i++){
             lcd_write_byte(pReceivedMessage[i],true);
             printf("data displayed on i : %u %c",i,pReceivedMessage[i]);
         }

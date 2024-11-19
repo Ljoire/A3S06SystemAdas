@@ -175,6 +175,11 @@ void ultrasonic_task(void *pvParameters)
             lcd_print(buffer);*/
             if (distance1 * 100 <= 20)
             {
+                printf("sizeof of the float = %u and the data on the functions is : %s ",sizeof(distance1),sensor_data);
+                memcpy(sensor_data, &distance1, sizeof(float));
+                for (int i = 0; i < sizeof(sensor_data); i++) {
+                    printf("%02X ", sensor_data[i]);
+                }
                 ESP_LOGI(TAG, "Capteur 1: Envoi des données dans la queue");
                 if (xQueueSend(sensor_data_queue, sensor_data, 0) != pdTRUE)
                 {

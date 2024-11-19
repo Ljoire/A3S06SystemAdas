@@ -324,12 +324,12 @@ static void example_espnow_task(void *pvParameter)
                 } else if (ret == EXAMPLE_ESPNOW_DATA_UNICAST) {
 
                     ESP_LOGI(TAG, "Receive %dth unicast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
-                    uint8_t parserMessage[sizeof(recv_payload)];
+                    uint8_t parserMessage[sizeof(recv_payload) + 1];
                     for (int i = 0; i < sizeof(recv_payload); i++) {
                         parserMessage[i] = recv_payload[i];
                     }
                     parserMessage[sizeof(recv_payload)] = '\0';
-                    char * pParsermessage = (char *)parserMessage;
+                    uint8_t *pParsermessage = &parserMessage;
                     ESP_LOGI(TAG,"%s is the data parsed \n",parserMessage);
                     //Send the parsed data to the queue for treatment
                 /* NEED TO INTEGRATE SOMETHING FOR SELECT WHERE TO SEND FROM THE PARSED MESSAGE*/
@@ -387,7 +387,7 @@ void espnow_sending_task(void *pvParameter) {
         if (xQueueReceive(sensor_data_queue, &sensor_data, portMAX_DELAY) == pdTRUE) {
                 // Appel de la fonction d'envoi ESPNOW avec les données reçues
                 ESP_LOGI(TAG,"Inside the sending task function");
-                espnow_datasending(send_param, (uint8_t*)"totohere", send_param->dest_mac);
+                espnow_datasending(send_param,&sensor_data,send_param->dest_mac);
 
                 // Délai pour éviter un envoi excessif
                 vTaskDelay(pdMS_TO_TICKS(100));  // Ajustez le délai selon les besoins
