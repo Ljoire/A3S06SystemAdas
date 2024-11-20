@@ -14,13 +14,11 @@
 #include <inttypes.h>
 #include <driver/i2c.h>
 #include "esp_log.h"
-
+include "freertos/FreeRTOS.h"
 #include "lcd.h"
 #include "espnow_example.h"
 
 static const char *TAG = "LCD";
-
-
 static i2c_port_t i2c_port = I2C_NUM_0;
 
 // Bits de contrôle PCF8574
