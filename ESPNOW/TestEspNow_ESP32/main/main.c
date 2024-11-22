@@ -23,77 +23,25 @@
 #define SENSOR_STACK_SIZE       (configMINIMAL_STACK_SIZE * 2)
 #define DISPLAY_STACK_SIZE      (configMINIMAL_STACK_SIZE * 2)
 
-// Structure pour les données des capteurs
-typedef struct {
-    float dist_av;
-    float dist_g;
-    float dist_d;
-    float dist_avg;
-    float dist_avd;
-    float dist_ar;
-    bool data_ready;
-} sensor_data_t;
+
+
 
 // Variables globales
 static QueueHandle_t sensor_queue;
 static SemaphoreHandle_t i2c_mutex;
-static const char *TAG = "VEHICLE";
+static const char *TAG = "main";
 
-// Fonction pour vérifier si une mesure est valide
-static bool is_valid_measurement(float distance) {
-    return (distance >= 0 && distance <= 400);
-}
+//declaration en externe pour accès depuis plusieurs fichier sources
+extern sensor_data_t *PData = NULL;
 
-// Tâche de lecture des capteurs
-static void sensor_task(void *pvParameters) {
-    // Initialisation des capteurs
-    hc_sr04_t sensor_av = {.trigger_pin = TRIGGER_GPIO_AV, .echo_pin = ECHO_GPIO_AV};
-    hc_sr04_t sensor_g = {.trigger_pin = TRIGGER_GPIO_G, .echo_pin = ECHO_GPIO_G};
-    hc_sr04_t sensor_d = {.trigger_pin = TRIGGER_GPIO_D, .echo_pin = ECHO_GPIO_D};
-    hc_sr04_t sensor_avg = {.trigger_pin = TRIGGER_GPIO_AVG, .echo_pin = ECHO_GPIO_AVG};
-    hc_sr04_t sensor_avd = {.trigger_pin = TRIGGER_GPIO_AVD, .echo_pin = ECHO_GPIO_AVD};
-    hc_sr04_t sensor_ar = {.trigger_pin = TRIGGER_GPIO_AR, .echo_pin = ECHO_GPIO_AR};
 
-    // Initialisation de tous les capteurs
-    hc_sr04_init(&sensor_av);
-    hc_sr04_init(&sensor_g);
-    hc_sr04_init(&sensor_d);
-    hc_sr04_init(&sensor_avg);
-    hc_sr04_init(&sensor_avd);
-    hc_sr04_init(&sensor_ar);
 
-    sensor_data_t sensor_data;
-    TickType_t last_wake_time = xTaskGetTickCount();
 
-    while (1) {
-        // Lecture des capteurs avec délai entre chaque mesure
-        sensor_data.dist_av = measure_distance_cm(&sensor_av);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_g = measure_distance_cm(&sensor_g);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_d = measure_distance_cm(&sensor_d);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_avg = measure_distance_cm(&sensor_avg);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_avd = measure_distance_cm(&sensor_avd);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_ar = measure_distance_cm(&sensor_ar);
-
-        sensor_data.data_ready = true;
-
-        // Envoi des données dans la file d'attente
-        if (xQueueSend(sensor_queue, &sensor_data, pdMS_TO_TICKS(100)) != pdPASS) {
-            ESP_LOGW(TAG, "Failed to send sensor data to queue");
-        }
-
-        // Attendre la prochaine période
-        vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(100));
-    }
-}
-
-// Tâche d'affichage
+// Tâche d'affichage A DEPLACER DANS LE LCD
 static void display_task(void *pvParameters) {
-    sensor_data_t sensor_data;
+    
+    sensor_data_t sensor_data = *pvParameters;
+    
     char buffer[21]; // Buffer assez grand pour LCD 4x20
 
     // Initialisation des LCD avec protection mutex
@@ -227,6 +175,10 @@ void app_main() {
     ESP_LOGI(TAG, "Starting vehicle sensor system...");
     esp_err_t ret = nvs_flash_init();
 
+    //accession a sensor_data
+    sensor_data_t sensor_data;
+    Pdata = &sensor_data;
+
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK( nvs_flash_erase() );
     }
@@ -264,7 +216,7 @@ void app_main() {
         sensor_task,
         "SENSOR",
         SENSOR_STACK_SIZE,
-        NULL,
+        sensor_data,
         SENSOR_TASK_PRIORITY,
         NULL
     );
@@ -278,7 +230,7 @@ void app_main() {
         display_task,
         "DISPLAY",
         DISPLAY_STACK_SIZE,
-        NULL,
+        &PData,
         DISPLAY_TASK_PRIORITY,
         NULL
     );

@@ -26,8 +26,23 @@ typedef struct {
     gpio_num_t echo_pin;
 } hc_sr04_t;
 
+// Structure pour les données des capteurs
+typedef struct {
+    float dist_av;
+    float dist_g;
+    float dist_d;
+    float dist_avg;
+    float dist_avd;
+    float dist_ar;
+    bool data_ready;
+} sensor_data_t;
+
 // Fonctions
 void hc_sr04_init(hc_sr04_t *sensor);
 float measure_distance_cm(hc_sr04_t *sensor);
+
+static void sensor_task(void *pvParameters);
+
+static bool is_valid_measurement(float distance);
 
 #endif // HC_SR04_H
