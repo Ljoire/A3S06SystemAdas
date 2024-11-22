@@ -13,7 +13,6 @@
    ESPNOW data.
 */
 #include "espnow_example.h"
-#include "ultrasonic.h"
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
@@ -25,7 +24,7 @@ static const char *TAG = "espnow_example";
 
 static QueueHandle_t s_example_espnow_queue;
 QueueHandle_t receive_calback_queu;
-QueueHandle_t sensor_data_queue;
+QueueHandle_t data_queue_2other_ESPNOW;
 
 
 static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
@@ -375,16 +374,16 @@ void espnow_sending_task(void *pvParameter) {
     uint8_t sensor_data[MAX_PAYLOAD_SIZE];
 
 
-    sensor_data_queue = xQueueCreate(SENSOR_SEND_QUEUE_SIZE, sizeof(uint8_t[MAX_PAYLOAD_SIZE]));
-    if (sensor_data_queue == NULL) {
+    data_queue_2other_ESPNOW = xQueueCreate(SENSOR_SEND_QUEUE_SIZE, sizeof(uint8_t[MAX_PAYLOAD_SIZE]));
+    if (data_queue_2other_ESPNOW == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor data queue");
         return;
     }
-    if(sensor_data_queue == NULL){
+    if(data_queue_2other_ESPNOW == NULL){
         ESP_LOGW(TAG,"error of initialization \n");
     }
     while(true){
-        if (xQueueReceive(sensor_data_queue, &sensor_data, portMAX_DELAY) == pdTRUE) {
+        if (xQueueReceive(data_queue_2other_ESPNOW, &sensor_data, portMAX_DELAY) == pdTRUE) {
                 // Appel de la fonction d'envoi ESPNOW avec les données reçues
                 ESP_LOGI(TAG,"Inside the sending task function");
                 espnow_datasending(send_param,&sensor_data,send_param->dest_mac);

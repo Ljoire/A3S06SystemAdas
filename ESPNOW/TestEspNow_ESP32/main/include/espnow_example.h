@@ -60,7 +60,7 @@
  * @brief Taille maximale de la file d'attente pour l'envoi des données des capteurs.
  *
  * Cette valeur détermine le nombre maximal de messages qui peuvent être stockés dans la file d'attente
- * `sensor_data_queue` avant d'être traités ou envoyés par ESPNOW.
+ * `data_queue_2other_ESPNOW` avant d'être traités ou envoyés par ESPNOW.
  */
 #define SENSOR_SEND_QUEUE_SIZE      10
 
@@ -118,7 +118,7 @@ static QueueHandle_t s_example_espnow_queue;
  *
  * Déclarée en externe pour pouvoir être utilisée dans d'autres fichiers source.
  */
-extern QueueHandle_t sensor_data_queue;
+extern QueueHandle_t data_queue_2other_ESPNOW;
 extern QueueHandle_t receive_calback_queu;
 /**
  * @brief Identifie le type d'événement dans le callback ESPNOW.
