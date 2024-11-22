@@ -119,7 +119,7 @@ static QueueHandle_t s_example_espnow_queue;
  * Déclarée en externe pour pouvoir être utilisée dans d'autres fichiers source.
  */
 extern QueueHandle_t data_queue_2other_ESPNOW;
-extern QueueHandle_t receive_calback_queu;
+extern QueueHandle_t receive_calback_queue;
 /**
  * @brief Identifie le type d'événement dans le callback ESPNOW.
  *

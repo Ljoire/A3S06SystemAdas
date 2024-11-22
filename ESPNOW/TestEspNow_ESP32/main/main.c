@@ -110,12 +110,11 @@ static void display_task(void *pvParameters) {
     bool is_dataFromESP = false
     while (1) {
         //si reception ESPNOW
-        if(xQueueReceive(sensor))
-            // afficher 
-            // init ccompt
-            // sortie du if  (is_valid_measurement(sensor_data.dist_av))
-            // saute le reste 
-        // Attendre les données des capteurs
+        if(xQueueReceive(receive_calback_queue,&DataFromEspNow,ESPNOW_MAXDELAY) == pdTRUE){
+            ESP_LOGI(TAG,"The data received is : %u",DataFromEspNow);
+            is_dataFromESP = true;
+        }
+
         if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS) {
             // Prendre le mutex I2C
             if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
@@ -126,11 +125,16 @@ static void display_task(void *pvParameters) {
 
                 // LCD2 - Ligne 1 (AV)
                 lcd2_set_cursor(0, 0);
-                if (is_valid_measurement(sensor_data.dist_av)) {// && compteur = 0 || reception ESPNOW
-                    if (sensor_data.dist_av > 5) {
+                if (is_valid_measurement(sensor_data.dist_av) || is_dataFromESP) {// && compteur = 0 || reception ESPNOW
+                    if (is_dataFromESP && (DataFromEspNow & 0x02)){ //si le bit n°1 est a 1
+                        snprintf(buffer, sizeof(buffer), "Att. Freinez !");
+                    }
+                    else if (sensor_data.dist_av > 5) {
                         snprintf(buffer, sizeof(buffer), "AV: %.1fcm", sensor_data.dist_av);
                     } else {
                         snprintf(buffer, sizeof(buffer), "Att. F. Urgence !");
+                        is_DATA2send = true;
+                        DataToEspNow = DataToEspNow | 0x02;
                     }
                     lcd2_print(buffer);
                 }
@@ -168,10 +172,8 @@ static void display_task(void *pvParameters) {
                         snprintf(buffer, sizeof(buffer), "AVG: %.1fcm", sensor_data.dist_avg);
                     } else {
                         snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
-                        DataToEspNow |= 0x01;
                         //mise du flag d'envoie a 1. Est nettoyé lorsque la donnée est envoyé
                         is_DATA2send = true;
-
                     }
                     lcd2_print(buffer);
                 }
@@ -210,7 +212,8 @@ static void display_task(void *pvParameters) {
             if(is_DATA2send == true){
                 //remise à false du flag 
                 is_DATA2send = false;
-                if (xQueueSend(data_queue_2other_ESPNOW,&DataToEspNow,ESPNOW_MAXDELAY) != pdTrue && is_DATA2send == true){
+                ESP_LOGI(TAG,"des données vont être envoyés");
+                if (xQueueSend(data_queue_2other_ESPNOW,DataToEspNow,ESPNOW_MAXDELAY) != pdTrue){
                     ESP_LOGW(TAG, "Send send queue fail");
                 }
                 // remise à 0 de l'octet d'alerte

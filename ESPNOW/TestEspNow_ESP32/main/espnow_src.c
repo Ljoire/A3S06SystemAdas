@@ -23,7 +23,7 @@
 static const char *TAG = "espnow_example";
 
 static QueueHandle_t s_example_espnow_queue;
-QueueHandle_t receive_calback_queu;
+QueueHandle_t receive_calback_queue;
 QueueHandle_t data_queue_2other_ESPNOW;
 
 
@@ -328,30 +328,14 @@ static void example_espnow_task(void *pvParameter)
                         parserMessage[i] = recv_payload[i];
                     }
                     parserMessage[sizeof(recv_payload)] = '\0';
-                    uint8_t *pParsermessage = &parserMessage;
+                    //passage d'une valeur en dur pour lest test
+                    uint8_t *pParsermessage = 0x01//&parserMessage;
                     ESP_LOGI(TAG,"%s is the data parsed \n",parserMessage);
                     //Send the parsed data to the queue for treatment
                 /* NEED TO INTEGRATE SOMETHING FOR SELECT WHERE TO SEND FROM THE PARSED MESSAGE*/
-                    if (xQueueSend(sensor_queue, &pParsermessage, ESPNOW_MAXDELAY) != pdTRUE) {
+                    if (xQueueSend(receive_calback_queue, &pParsermessage, ESPNOW_MAXDELAY) != pdTRUE) {
                             ESP_LOGW(TAG, "Send send queue fail");
                         }
-
-                    /*
-                    //ACK To integrate later
-                    parserMessage[sizeof(recv_payload)] = 'K';
-                    send_param->broadcast = false;
-                    uint8_t table[] = "SdLead ";
-                    if (parserMessage[0] == table[0]) {
-                        printf("Receive all the data\n");
-                        send_param->pingpong = true;
-                        Frame_counter--;
-                        if (Frame_counter == 0) {
-                            ESP_LOGI(TAG, "receive done");
-                            espnow_datasending(send_param, (uint8_t *)"ENDING", recv_cb->mac_addr);
-                            example_espnow_deinit(send_param);
-                            vTaskDelete(NULL);   
-                    }
-                    DEBUG*/
                     ESP_LOGD(TAG, "The mac adress copied  is : "MACSTR"", MAC2STR(send_param->dest_mac));
 
                 } else {
@@ -402,7 +386,7 @@ esp_err_t example_espnow_init(void *pvParameter)
         return ESP_FAIL;
     }
 
-    receive_calback_queu = xQueueCreate(ESPNOW_QUEUE_SIZE,sizeof(char*));
+    receive_calback_queue = xQueueCreate(ESPNOW_QUEUE_SIZE,sizeof(char*));
     if (s_example_espnow_queue == NULL) {
         ESP_LOGE(TAG, "Create mutex fail");
         return ESP_FAIL;
