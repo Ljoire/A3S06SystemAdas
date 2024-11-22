@@ -12,6 +12,8 @@
 #include "hc_sr04.h"
 #include "i2c_lcd.h"
 #include "i2c_lcd2.h"
+#include "espnow_example.h"
+
 
 // Définition des priorités des tâches
 #define SENSOR_TASK_PRIORITY    (tskIDLE_PRIORITY + 3)
@@ -102,7 +104,7 @@ static void display_task(void *pvParameters) {
         lcd2_backlight(true);
         xSemaphoreGive(i2c_mutex);
     }
-
+    uint8_t DataToEspNow = 0x00;
     while (1) {
         // Attendre les données des capteurs
         if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS) {
@@ -162,6 +164,11 @@ static void display_task(void *pvParameters) {
                         snprintf(buffer, sizeof(buffer), "AVG: %.1fcm", sensor_data.dist_avg);
                     } else {
                         snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
+                        //on envoie en ESP NOW sur l'autre LCD. Attention ! Sera envoyé seulement quand en unicast
+                        DataToEspNow |= 0x01;
+                        if (xQueueSend(data_queue_2other_ESPNOW,&DataToEspNow,ESPNOW_MAXDELAY) != pdTrue){
+                            ESP_LOGW(TAG, "Send send queue fail");
+                        }
                     }
                     lcd2_print(buffer);
                 }
