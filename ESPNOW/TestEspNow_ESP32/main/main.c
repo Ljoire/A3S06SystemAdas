@@ -13,7 +13,7 @@
 #include "i2c_lcd.h"
 #include "i2c_lcd2.h"
 #include "espnow_example.h"
-
+#include "nvs.h"
 
 // Définition des priorités des tâches
 #define SENSOR_TASK_PRIORITY    (tskIDLE_PRIORITY + 3)
@@ -225,6 +225,22 @@ static void display_task(void *pvParameters) {
 
 void app_main() {
     ESP_LOGI(TAG, "Starting vehicle sensor system...");
+    esp_err_t ret = nvs_flash_init();
+
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK( nvs_flash_erase() );
+    }
+    ESP_ERROR_CHECK( ret );
+    
+
+    example_wifi_init();
+    printf("wifi initialized");
+    example_espnow_send_param_t *send_param = SendingParamCreator();
+    
+    if(example_espnow_init(send_param) != ESP_OK){
+        ESP_LOGE(TAG,"error during the initialization of espnow");        
+    }
+    printf("ESP now init");*
 
     // Création de la file d'attente pour les données des capteurs
     sensor_queue = xQueueCreate(2, sizeof(sensor_data_t));
