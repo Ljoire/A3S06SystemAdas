@@ -329,7 +329,7 @@ static void example_espnow_task(void *pvParameter)
                     }
                     parserMessage[sizeof(recv_payload)] = '\0';
                     //passage d'une valeur en dur pour lest test
-                    uint8_t *pParsermessage = 0x01//&parserMessage;
+                    uint8_t pParsermessage = 0x01;//&parserMessage;
                     ESP_LOGI(TAG,"%s is the data parsed \n",parserMessage);
                     //Send the parsed data to the queue for treatment
                 /* NEED TO INTEGRATE SOMETHING FOR SELECT WHERE TO SEND FROM THE PARSED MESSAGE*/

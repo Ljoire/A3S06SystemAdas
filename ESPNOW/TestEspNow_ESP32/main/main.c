@@ -107,7 +107,7 @@ static void display_task(void *pvParameters) {
     uint8_t DataToEspNow = 0x00;
     bool is_DATA2send = false;
     uint8_t DataFromEspNow = 0x00;
-    bool is_dataFromESP = false
+    bool is_dataFromESP = false;
     while (1) {
         //si reception ESPNOW
         if(xQueueReceive(receive_calback_queue,&DataFromEspNow,ESPNOW_MAXDELAY) == pdTRUE){
@@ -213,7 +213,7 @@ static void display_task(void *pvParameters) {
                 //remise à false du flag 
                 is_DATA2send = false;
                 ESP_LOGI(TAG,"des données vont être envoyés");
-                if (xQueueSend(data_queue_2other_ESPNOW,DataToEspNow,ESPNOW_MAXDELAY) != pdTrue){
+                if (xQueueSend(data_queue_2other_ESPNOW,DataToEspNow,ESPNOW_MAXDELAY) != pdTRUE){
                     ESP_LOGW(TAG, "Send send queue fail");
                 }
                 // remise à 0 de l'octet d'alerte
@@ -240,7 +240,7 @@ void app_main() {
     if(example_espnow_init(send_param) != ESP_OK){
         ESP_LOGE(TAG,"error during the initialization of espnow");        
     }
-    printf("ESP now init");*
+    printf("ESP now init");
 
     // Création de la file d'attente pour les données des capteurs
     sensor_queue = xQueueCreate(2, sizeof(sensor_data_t));
