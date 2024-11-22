@@ -115,7 +115,12 @@ static void display_task(void *pvParameters) {
 
                 // LCD2 - Ligne 1 (AV)
                 lcd2_set_cursor(0, 0);
-                if (is_valid_measurement(sensor_data.dist_av)) {
+                if (is_valid_measurement(sensor_data.dist_av)) {// && compteur = 0 || reception ESPNOW
+                    //si reception ESPNOW
+                        // afficher 
+                        // init ccompt
+                        // sortie du if  (is_valid_measurement(sensor_data.dist_av))
+                        // saute le reste 
                     if (sensor_data.dist_av > 5) {
                         snprintf(buffer, sizeof(buffer), "AV: %.1fcm", sensor_data.dist_av);
                     } else {
@@ -123,7 +128,7 @@ static void display_task(void *pvParameters) {
                     }
                     lcd2_print(buffer);
                 }
-
+                // compteur --;
                 // LCD1 - Ligne 1 (G)
                 lcd_set_cursor(0, 0);
                 if (is_valid_measurement(sensor_data.dist_g)) {

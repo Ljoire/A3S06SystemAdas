@@ -332,7 +332,7 @@ static void example_espnow_task(void *pvParameter)
                     ESP_LOGI(TAG,"%s is the data parsed \n",parserMessage);
                     //Send the parsed data to the queue for treatment
                 /* NEED TO INTEGRATE SOMETHING FOR SELECT WHERE TO SEND FROM THE PARSED MESSAGE*/
-                    if (xQueueSend(receive_calback_queu, &pParsermessage, ESPNOW_MAXDELAY) != pdTRUE) {
+                    if (xQueueSend(sensor_queue, &pParsermessage, ESPNOW_MAXDELAY) != pdTRUE) {
                             ESP_LOGW(TAG, "Send send queue fail");
                         }
 
@@ -379,9 +379,7 @@ void espnow_sending_task(void *pvParameter) {
         ESP_LOGE(TAG, "Failed to create sensor data queue");
         return;
     }
-    if(data_queue_2other_ESPNOW == NULL){
-        ESP_LOGW(TAG,"error of initialization \n");
-    }
+
     while(true){
         if (xQueueReceive(data_queue_2other_ESPNOW, &sensor_data, portMAX_DELAY) == pdTRUE) {
                 // Appel de la fonction d'envoi ESPNOW avec les données reçues
