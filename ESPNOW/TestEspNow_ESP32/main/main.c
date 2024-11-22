@@ -105,7 +105,16 @@ static void display_task(void *pvParameters) {
         xSemaphoreGive(i2c_mutex);
     }
     uint8_t DataToEspNow = 0x00;
+    bool is_DATA2send = false;
+    uint8_t DataFromEspNow = 0x00;
+    bool is_dataFromESP = false
     while (1) {
+        //si reception ESPNOW
+        if(xQueueReceive(sensor))
+            // afficher 
+            // init ccompt
+            // sortie du if  (is_valid_measurement(sensor_data.dist_av))
+            // saute le reste 
         // Attendre les données des capteurs
         if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS) {
             // Prendre le mutex I2C
@@ -118,11 +127,6 @@ static void display_task(void *pvParameters) {
                 // LCD2 - Ligne 1 (AV)
                 lcd2_set_cursor(0, 0);
                 if (is_valid_measurement(sensor_data.dist_av)) {// && compteur = 0 || reception ESPNOW
-                    //si reception ESPNOW
-                        // afficher 
-                        // init ccompt
-                        // sortie du if  (is_valid_measurement(sensor_data.dist_av))
-                        // saute le reste 
                     if (sensor_data.dist_av > 5) {
                         snprintf(buffer, sizeof(buffer), "AV: %.1fcm", sensor_data.dist_av);
                     } else {
@@ -164,11 +168,10 @@ static void display_task(void *pvParameters) {
                         snprintf(buffer, sizeof(buffer), "AVG: %.1fcm", sensor_data.dist_avg);
                     } else {
                         snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
-                        //on envoie en ESP NOW sur l'autre LCD. Attention ! Sera envoyé seulement quand en unicast
                         DataToEspNow |= 0x01;
-                        if (xQueueSend(data_queue_2other_ESPNOW,&DataToEspNow,ESPNOW_MAXDELAY) != pdTrue){
-                            ESP_LOGW(TAG, "Send send queue fail");
-                        }
+                        //mise du flag d'envoie a 1. Est nettoyé lorsque la donnée est envoyé
+                        is_DATA2send = true;
+
                     }
                     lcd2_print(buffer);
                 }
@@ -201,6 +204,17 @@ static void display_task(void *pvParameters) {
 
                 // Libérer le mutex I2C
                 xSemaphoreGive(i2c_mutex);
+            }
+            // si des données importante sont à envoyer, elle le sont ici 
+            //on envoie en ESP NOW sur l'autre LCD. Attention ! Sera envoyé seulement quand en unicast
+            if(is_DATA2send == true){
+                //remise à false du flag 
+                is_DATA2send = false;
+                if (xQueueSend(data_queue_2other_ESPNOW,&DataToEspNow,ESPNOW_MAXDELAY) != pdTrue && is_DATA2send == true){
+                    ESP_LOGW(TAG, "Send send queue fail");
+                }
+                // remise à 0 de l'octet d'alerte
+                DataToEspNow = 0x00;
             }
         }
     }
