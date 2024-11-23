@@ -83,7 +83,7 @@ static void sensor_task(void *pvParameters) {
 
         // Envoi des données dans la file d'attente
         if (xQueueSend(sensor_queue, &sensor_data, pdMS_TO_TICKS(100)) != pdPASS) {
-            ESP_LOGW(TAG, "Failed to send sensor data to queue");
+            ESP_LOGW(TAG, "Failed to send sensor data to queue in the main ");
         }
 
         // Attendre la prochaine période
@@ -173,7 +173,7 @@ static void display_task(void *pvParameters) {
                     } else {
                         snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
                         //mise du flag d'envoie a 1. Est nettoyé lorsque la donnée est envoyé
-                        is_DATA2send = true;
+                        //is_DATA2send = true;
                     }
                     lcd2_print(buffer);
                 }
@@ -243,7 +243,7 @@ void app_main() {
     printf("ESP now init");
 
     // Création de la file d'attente pour les données des capteurs
-    sensor_queue = xQueueCreate(2, sizeof(sensor_data_t));
+    sensor_queue = xQueueCreate(500, sizeof(sensor_data_t));
     if (sensor_queue == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor queue");
         return;
