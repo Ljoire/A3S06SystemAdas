@@ -1,3 +1,13 @@
+/**
+ * @file hc_sr04.c
+ * @author ***** (you@domain.com)
+ * @brief Implementation of HC-SR04 ultrasonic sensor interface.
+ * @version 0.1
+ * @date 2024-11-24
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include "hc_sr04.h"
 #include <esp_system.h>
 #include <esp_timer.h>
@@ -5,142 +15,130 @@
 #include <math.h>
 #include <portmacro.h>
 
-static const char *TAG = "Sensor";
-
-// Fonction pour vérifier si une mesure est valide
+/**
+ * @brief Validates a measured distance.
+ *
+ * Ensures the measured distance is within the sensor's valid range (2-400 cm).
+ *
+ * @param distance Measured distance in centimeters.
+ * @return bool Returns true if the distance is valid, false otherwise.
+ */
 static bool is_valid_measurement(float distance) {
-    return (distance >= 0 && distance <= 400);
+    return (distance >= 2.0 && distance <= 400.0);
 }
 
+/**
+ * @brief Initializes an HC-SR04 sensor.
+ *
+ * Configures the Trigger pin as output and the Echo pin as input.
+ *
+ * @param sensor Pointer to the `hc_sr04_t` structure representing the sensor.
+ * @return int Returns 0 on success, or an error code on failure.
+ */
 int hc_sr04_init(hc_sr04_t *sensor) {
-    // Configure Trigger pin as output
     if (sensor == NULL) {
-        printf("Erreur: Le pointeur du capteur est NULL\n");
+        printf("Error: Sensor pointer is NULL\n");
         return -1;
     }
 
-    if (sensor->trigger_pin < 0 || sensor->echo_pin < 0) {
-        printf("Erreur: Les broches TRIGGER ou ECHO ne sont pas correctement définies\n");
-        return -2;
-    }
-
+    // Configure Trigger pin
     gpio_config_t io_conf = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = (1ULL << sensor->trigger_pin),
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = 0,
-        .pull_up_en = 0
     };
-    
     if (gpio_config(&io_conf) != ESP_OK) {
-        printf("Erreur: Impossible de configurer la broche TRIGGER\n");
+        printf("Error: Unable to configure Trigger pin\n");
         return -3;
     }
 
-    // Configure Echo pin as input
+    // Configure Echo pin
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask = (1ULL << sensor->echo_pin);
-    
     if (gpio_config(&io_conf) != ESP_OK) {
-        printf("Erreur: Impossible de configurer la broche ECHO\n");
+        printf("Error: Unable to configure Echo pin\n");
         return -4;
     }
 
     return 0;
 }
 
+/**
+ * @brief Measures the distance in centimeters using an HC-SR04 sensor.
+ *
+ * Sends a 10µs pulse on the Trigger pin and measures the echo duration to calculate the distance.
+ *
+ * @param sensor Pointer to the `hc_sr04_t` structure representing the sensor.
+ * @return float Distance in centimeters, or a negative value on error.
+ */
 float measure_distance_cm(hc_sr04_t *sensor) {
-    
     if (sensor == NULL) {
-        printf("Erreur: Le pointeur du capteur est NULL\n");
-        return -1;
+        printf("Error: Sensor pointer is NULL\n");
+        return -1.0;
     }
-
-    if (sensor->trigger_pin < 0 || sensor->echo_pin < 0) {
-        printf("Erreur: Les broches TRIGGER ou ECHO ne sont pas valides\n");
-        return -2;
-    }
-
 
     gpio_set_level(sensor->trigger_pin, 1);
-    ets_delay_us(10);
+    ets_delay_us(10); // Trigger pulse width
     gpio_set_level(sensor->trigger_pin, 0);
 
-    // Mesurer la durée de l'écho avec timeout
     uint64_t timeout = esp_timer_get_time() + 30000; // 30ms timeout
-    
+
+    // Wait for echo start
     while (gpio_get_level(sensor->echo_pin) == 0) {
         if (esp_timer_get_time() > timeout) {
-            printf("Erreur: Pas de signal de début d'écho (timeout)\n");
-            return -3;
+            printf("Error: Echo signal timeout\n");
+            return -3.0;
         }
     }
+
     uint64_t echo_start = esp_timer_get_time();
-    
+
+    // Wait for echo end
     while (gpio_get_level(sensor->echo_pin) == 1) {
         if (esp_timer_get_time() > timeout) {
-            printf("Erreur: Signal d'écho trop long (timeout)\n");
-            return -4;
+            printf("Error: Echo signal too long\n");
+            return -4.0;
         }
     }
+
     uint64_t echo_end = esp_timer_get_time();
 
     float distance_cm = (echo_end - echo_start) / 58.0;
-    
-    // Filtrer les valeurs aberrantes
-    if (distance_cm < 2 || distance_cm > 400) {
-        printf("Erreur: Distance mesurée hors des limites valides (%.2f cm)\n", distance_cm);
-        return -5;
+
+    // Validate distance
+    if (!is_valid_measurement(distance_cm)) {
+        printf("Error: Invalid distance (%.2f cm)\n", distance_cm);
+        return -5.0;
     }
-    
+
     return distance_cm;
 }
 
-// Tâche de lecture des capteurs
+/**
+ * @brief Task for reading distances from multiple sensors.
+ *
+ * Continuously reads data from the sensors, validates the measurements, and updates the `sensor_data_t` structure.
+ *
+ * @param pvParameters Pointer to the `sensor_data_t` structure for storing sensor data.
+ */
 static void sensor_task(void *pvParameters) {
-    // Initialisation des capteurs
-    //cast du pvParameters pour acceder au donnees 
-    sensor_data_t sensor_data = (*sensor_data_t) pvParameters;
-    
-    hc_sr04_t sensor_av = {.trigger_pin = TRIGGER_GPIO_AV, .echo_pin = ECHO_GPIO_AV};
-    hc_sr04_t sensor_g = {.trigger_pin = TRIGGER_GPIO_G, .echo_pin = ECHO_GPIO_G};
-    hc_sr04_t sensor_d = {.trigger_pin = TRIGGER_GPIO_D, .echo_pin = ECHO_GPIO_D};
-    hc_sr04_t sensor_avg = {.trigger_pin = TRIGGER_GPIO_AVG, .echo_pin = ECHO_GPIO_AVG};
-    hc_sr04_t sensor_avd = {.trigger_pin = TRIGGER_GPIO_AVD, .echo_pin = ECHO_GPIO_AVD};
-    hc_sr04_t sensor_ar = {.trigger_pin = TRIGGER_GPIO_AR, .echo_pin = ECHO_GPIO_AR};
+    sensor_data_t *sensor_data = (sensor_data_t *)pvParameters;
 
-    // Initialisation de tous les capteurs
-    hc_sr04_init(&sensor_av);
-    hc_sr04_init(&sensor_g);
-    hc_sr04_init(&sensor_d);
-    hc_sr04_init(&sensor_avg);
-    hc_sr04_init(&sensor_avd);
-    hc_sr04_init(&sensor_ar);
-
-    TickType_t last_wake_time = xTaskGetTickCount();
+    hc_sr04_t sensors[] = {
+        {TRIGGER_GPIO_AV, ECHO_GPIO_AV},
+        {TRIGGER_GPIO_G, ECHO_GPIO_G},
+        {TRIGGER_GPIO_D, ECHO_GPIO_D},
+        {TRIGGER_GPIO_AVG, ECHO_GPIO_AVG},
+        {TRIGGER_GPIO_AVD, ECHO_GPIO_AVD},
+        {TRIGGER_GPIO_AR, ECHO_GPIO_AR}
+    };
 
     while (1) {
-        // Lecture des capteurs avec délai entre chaque mesure
-        sensor_data.dist_av = measure_distance_cm(&sensor_av);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_g = measure_distance_cm(&sensor_g);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_d = measure_distance_cm(&sensor_d);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_avg = measure_distance_cm(&sensor_avg);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_avd = measure_distance_cm(&sensor_avd);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        sensor_data.dist_ar = measure_distance_cm(&sensor_ar);
+        for (int i = 0; i < 6; i++) {
+            (&sensor_data->dist_av)[i] = measure_distance_cm(&sensors[i]);
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        sensor_data->data_ready = true;
 
-        sensor_data.data_ready = true;
-
-        // Envoi des données dans la file d'attente --> Les données sont passés par références
-        //if (xQueueSend(sensor_queue, &sensor_data, pdMS_TO_TICKS(100)) != pdPASS) {
-        //    ESP_LOGW(TAG, "Failed to send sensor data to queue");
-        //}
-
-        // Attendre la prochaine période
-        vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }

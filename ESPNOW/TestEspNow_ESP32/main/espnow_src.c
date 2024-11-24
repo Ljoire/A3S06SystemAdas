@@ -1,11 +1,14 @@
- /* ESPNOW Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/**
+ * @file espnow_src.c
+ * @author Léon Joire leon.joire@esme.fr
+ * @brief  Source code of the espnow function used for the V2V communications in our end of study project
+ * @version 0.1
+ * @date 2024-11-24
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
+ */
 
 /*
    This example shows how to use ESPNOW.

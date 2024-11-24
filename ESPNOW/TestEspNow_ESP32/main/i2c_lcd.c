@@ -1,50 +1,62 @@
+/**
+ * @file lcd_i2c.c
+ * @brief Implementation of I2C-based LCD control functions.
+ *
+ * This file contains the implementation of functions to initialize and control
+ * an LCD module connected via I2C using the PCF8574 I/O expander. It supports
+ * operations such as clearing the display, printing text, setting the cursor position,
+ * and toggling the backlight.
+ */
+
 #include "i2c_lcd.h"
 #include <esp_log.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-static const char *TAG = "LCD";
-static i2c_port_t i2c_port = I2C_NUM_0;
+static const char *TAG = "LCD"; /**< Tag used for ESP log messages. */
+static i2c_port_t i2c_port = I2C_NUM_0; /**< I2C port used for communication with the LCD. */
 
-// Bits de contrôle PCF8574
-#define LCD_RS_BIT      0x01
-#define LCD_RW_BIT      0x02
-#define LCD_EN_BIT      0x04
-#define LCD_BL_BIT      0x08
-#define LCD_DATA_BITS   0xF0
+/**
+ * @brief Control bits for the PCF8574.
+ */
+#define LCD_RS_BIT      0x01 /**< Register Select bit: Command(0)/Data(1). */
+#define LCD_RW_BIT      0x02 /**< Read/Write bit: Write(0)/Read(1). */
+#define LCD_EN_BIT      0x04 /**< Enable bit: Activates data read/write. */
+#define LCD_BL_BIT      0x08 /**< Backlight control bit. */
+#define LCD_DATA_BITS   0xF0 /**< Data bits mask for the high nibble. */
 
-static uint8_t backlight_state = LCD_BL_BIT;
+static uint8_t backlight_state = LCD_BL_BIT; /**< Stores the current state of the backlight. */
 
-static esp_err_t lcd_write_byte(uint8_t cmd, bool is_data) {
-    uint8_t high_nibble = (cmd & 0xF0) | backlight_state;
-    uint8_t low_nibble = ((cmd << 4) & 0xF0) | backlight_state;
-    
-    if (is_data) {
-        high_nibble |= LCD_RS_BIT;
-        low_nibble |= LCD_RS_BIT;
-    }
+/**
+ * @brief Writes a byte to the LCD over I2C.
+ *
+ * Sends a byte to the LCD in 4-bit mode by splitting it into a high and low nibble.
+ * The data is sent along with control signals such as RS, RW, EN, and BL.
+ *
+ * @param cmd The byte to write (command or data).
+ * @param is_data Set to `true` for data, or `false` for command.
+ * @return esp_err_t Returns `ESP_OK` on success, or an error code on failure.
+ */
+static esp_err_t lcd_write_byte(uint8_t cmd, bool is_data);
 
-    uint8_t data[4];
-    data[0] = high_nibble | LCD_EN_BIT;
-    data[1] = high_nibble;
-    data[2] = low_nibble | LCD_EN_BIT;
-    data[3] = low_nibble;
-
-    return i2c_master_write_to_device(i2c_port, LCD_I2C_ADDR, data, 4, 1000 / portTICK_PERIOD_MS);
-}
-
-static void lcd_send_cmd(uint8_t cmd) {
-    lcd_write_byte(cmd, false);
-    if (cmd == LCD_CLEARDISPLAY || cmd == LCD_RETURNHOME) {
-        vTaskDelay(2 / portTICK_PERIOD_MS);
-    } else {
-        vTaskDelay(1 / portTICK_PERIOD_MS);
-    }
-}
+/**
+ * @brief Sends a command to the LCD.
+ *
+ * Sends a command byte to the LCD using the `lcd_write_byte` function.
+ * Adds appropriate delays for specific commands like `LCD_CLEARDISPLAY` and `LCD_RETURNHOME`.
+ *
+ * @param cmd The command byte to send.
+ */
+static void lcd_send_cmd(uint8_t cmd);
 
 void lcd_init(void) {
-    // Configuration I2C
+    /**
+     * @brief Initializes the LCD and the I2C interface.
+     *
+     * Configures the I2C master interface and initializes the LCD in 4-bit mode.
+     * Sends a series of initialization commands to configure the LCD.
+     */
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = GPIO_NUM_21,
@@ -53,43 +65,55 @@ void lcd_init(void) {
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master.clk_speed = 100000
     };
-    
+
     ESP_ERROR_CHECK(i2c_param_config(i2c_port, &conf));
     ESP_ERROR_CHECK(i2c_driver_install(i2c_port, conf.mode, 0, 0, 0));
 
-    // Attendre que le LCD soit prêt
     vTaskDelay(100 / portTICK_PERIOD_MS);
 
-    // Séquence d'initialisation 4 bits
     uint8_t init_seq[] = {0x03, 0x03, 0x03, 0x02};
-    for(int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         uint8_t data = (init_seq[i] << 4) | backlight_state;
-        uint8_t with_en = data | LCD_EN_BIT;
-        uint8_t without_en = data;
-        
-        uint8_t buf[2] = {with_en, without_en};
+        uint8_t buf[2] = {data | LCD_EN_BIT, data};
         i2c_master_write_to_device(i2c_port, LCD_I2C_ADDR, buf, 2, 1000 / portTICK_PERIOD_MS);
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 
-    // Configuration du LCD
-    lcd_send_cmd(LCD_FUNCTIONSET | 0x08);        // 4-bit, 2 lignes, 5x8 pixels
-    lcd_send_cmd(LCD_DISPLAYCONTROL | 0x04);     // Display ON, pas de curseur
-    lcd_send_cmd(LCD_CLEARDISPLAY);              // Effacer l'écran
-    lcd_send_cmd(LCD_ENTRYMODESET | 0x02);       // Entrée de gauche à droite
+    lcd_send_cmd(LCD_FUNCTIONSET | 0x08);
+    lcd_send_cmd(LCD_DISPLAYCONTROL | 0x04);
+    lcd_send_cmd(LCD_CLEARDISPLAY);
+    lcd_send_cmd(LCD_ENTRYMODESET | 0x02);
 
     ESP_LOGI(TAG, "LCD initialized successfully");
 }
 
 void lcd_clear(void) {
+    /**
+     * @brief Clears the LCD display.
+     *
+     * Sends the `LCD_CLEARDISPLAY` command to clear the LCD and reset the cursor position.
+     */
     lcd_send_cmd(LCD_CLEARDISPLAY);
 }
 
 void lcd_home(void) {
+    /**
+     * @brief Resets the cursor to the home position.
+     *
+     * Sends the `LCD_RETURNHOME` command to move the cursor to the top-left corner.
+     */
     lcd_send_cmd(LCD_RETURNHOME);
 }
 
 void lcd_set_cursor(uint8_t row, uint8_t col) {
+    /**
+     * @brief Sets the cursor to a specific position on the LCD.
+     *
+     * Calculates the DDRAM address based on the row and column and sends the corresponding command.
+     *
+     * @param row Row number (0-indexed). Must be less than `LCD_ROWS`.
+     * @param col Column number (0-indexed). Must be less than `LCD_COLS`.
+     */
     static const uint8_t row_offsets[] = {0x00, 0x40};
     if (row >= LCD_ROWS) row = LCD_ROWS - 1;
     if (col >= LCD_COLS) col = LCD_COLS - 1;
@@ -97,12 +121,26 @@ void lcd_set_cursor(uint8_t row, uint8_t col) {
 }
 
 void lcd_print(const char* str) {
+    /**
+     * @brief Prints a string to the LCD at the current cursor position.
+     *
+     * Iterates through the string and sends each character as data to the LCD.
+     *
+     * @param str Pointer to the null-terminated string to display.
+     */
     while (*str) {
         lcd_write_byte(*str++, true);
     }
 }
 
 void lcd_backlight(bool on) {
+    /**
+     * @brief Controls the LCD backlight.
+     *
+     * Enables or disables the backlight by updating the `backlight_state`.
+     *
+     * @param on Set to `true` to enable the backlight, or `false` to disable it.
+     */
     backlight_state = on ? LCD_BL_BIT : 0x00;
     uint8_t data = backlight_state;
     i2c_master_write_to_device(i2c_port, LCD_I2C_ADDR, &data, 1, 1000 / portTICK_PERIOD_MS);
