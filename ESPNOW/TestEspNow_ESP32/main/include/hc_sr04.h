@@ -38,7 +38,7 @@ typedef struct {
 } sensor_data_t;
 
 // Fonctions
-void hc_sr04_init(hc_sr04_t *sensor);
+int hc_sr04_init(hc_sr04_t *sensor);
 float measure_distance_cm(hc_sr04_t *sensor);
 
 static void sensor_task(void *pvParameters);

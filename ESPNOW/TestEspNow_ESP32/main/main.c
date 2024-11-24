@@ -121,7 +121,7 @@ static void display_task(void *pvParameters) {
                     } else {
                         snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
                         //mise du flag d'envoie a 1. Est nettoyé lorsque la donnée est envoyé
-                        is_DATA2send = true;
+                        //is_DATA2send = true;
                     }
                     lcd2_print(buffer);
                 }
@@ -195,7 +195,7 @@ void app_main() {
     printf("ESP now init");
 
     // Création de la file d'attente pour les données des capteurs
-    sensor_queue = xQueueCreate(2, sizeof(sensor_data_t));
+    sensor_queue = xQueueCreate(500, sizeof(sensor_data_t));
     if (sensor_queue == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor queue");
         return;
