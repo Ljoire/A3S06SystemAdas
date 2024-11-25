@@ -132,6 +132,12 @@ static void sensor_task(void *pvParameters) {
         {TRIGGER_GPIO_AR, ECHO_GPIO_AR}
     };
 
+    for (int i = 0; i < 6; i++) {
+        if (hc_sr04_init(&sensors[i]) != 0) {
+            printf("Error: Failed to initialize sensor %d\n", i);
+        }
+    }
+
     while (1) {
         for (int i = 0; i < 6; i++) {
             (&sensor_data->dist_av)[i] = measure_distance_cm(&sensors[i]);
