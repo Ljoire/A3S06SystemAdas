@@ -111,6 +111,6 @@ void lcd_print(const char* str);
  */
 void lcd_backlight(bool on);
 
-static void display_task(void *pvParameters);
+extern void display_task(void *pvParameters);
 
 #endif // I2C_LCD_H

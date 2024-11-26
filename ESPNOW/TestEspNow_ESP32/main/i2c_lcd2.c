@@ -2,7 +2,6 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "portmacro.h"
 #include "hc_sr04.h"
 #include "i2c_lcd2.h"
 #include "espnow_example.h"
@@ -12,7 +11,7 @@
 static const char *TAG = "LCD2";
 static i2c_port_t i2c_port2 = I2C_NUM_1; // Utilisation du second port I2C
 static uint8_t backlight_state2 = 0x08;   // État initial du rétroéclairage
-SemaphoreHandle_t
+QueueHandle_t sensor_queue;
 
 // Bits de contrôle PCF8574
 #define LCD2_RS_BIT      0x01
@@ -50,12 +49,12 @@ static void lcd2_send_cmd(uint8_t cmd) {
     }
 }
 
-// Création du mutex I2C
-static SemaphoreHandle_t i2c_mutex = xSemaphoreCreateMutex();
-
-if (i2c_mutex == NULL) {
-    ESP_LOGE(TAG, "Failed to create I2C mutex");
-    return;
+void init_i2c_mutex(void) {
+    i2c_mutex = xSemaphoreCreateMutex();
+    if (i2c_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create I2C mutex");
+        return;
+    }
 }
 
 // Initialisation du LCD2
@@ -127,7 +126,7 @@ void lcd2_backlight(bool on) {
 
 void display_task(void *pvParameters) {
     
-    sensor_data_t sensor_data = *pvParameters;
+    sensor_data_t sensor_data = *(sensor_data_t *)pvParameters;
     
     char buffer[21]; // Buffer assez grand pour LCD 4x20
 
@@ -248,7 +247,7 @@ void display_task(void *pvParameters) {
                 //remise à false du flag 
                 is_DATA2send = false;
                 ESP_LOGI(TAG,"des données vont être envoyés");
-                if (xQueueSend(data_queue_2other_ESPNOW,DataToEspNow,ESPNOW_MAXDELAY) != pdTRUE){
+                if (xQueueSend(data_queue_2other_ESPNOW,&DataToEspNow,ESPNOW_MAXDELAY) != pdTRUE){
                     ESP_LOGW(TAG, "Send send queue fail");
                 }
                 // remise à 0 de l'octet d'alerte

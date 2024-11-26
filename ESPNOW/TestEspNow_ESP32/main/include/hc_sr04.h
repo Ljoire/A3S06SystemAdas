@@ -93,6 +93,6 @@ static void sensor_task(void *pvParameters);
  * @param distance Measured distance in centimeters.
  * @return bool Returns true if the distance is valid, false otherwise.
  */
-static bool is_valid_measurement(float distance);
+bool is_valid_measurement(float distance);
 
 #endif // HC_SR04_H

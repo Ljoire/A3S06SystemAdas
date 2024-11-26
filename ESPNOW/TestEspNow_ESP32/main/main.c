@@ -34,8 +34,7 @@
 
 
 
-// Variables globales
-static QueueHandle_t sensor_queue;
+
 //static SemaphoreHandle_t i2c_mutex;
 static const char *TAG = "main";
 

@@ -13,7 +13,6 @@
 #include <esp_timer.h>
 #include <rom/ets_sys.h>
 #include <math.h>
-#include <portmacro.h>
 
 /* FreeRTOS Libraries */
 #include "freertos/FreeRTOS.h"   /**< FreeRTOS API for real-time operating system tasks and queues. */
@@ -32,7 +31,7 @@
  * @param distance Measured distance in centimeters.
  * @return bool Returns true if the distance is valid, false otherwise.
  */
-static bool is_valid_measurement(float distance) {
+bool is_valid_measurement(float distance) {
     return (distance >= 2.0 && distance <= 400.0);
 }
 
