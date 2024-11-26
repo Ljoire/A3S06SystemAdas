@@ -83,7 +83,7 @@ float measure_distance_cm(hc_sr04_t *sensor);
  *
  * @param pvParameters Pointer to the `sensor_data_t` structure for storing sensor data.
  */
-static void sensor_task(void *pvParameters);
+extern void sensor_task(void *pvParameters);
 
 /**
  * @brief Validates the measured distance.

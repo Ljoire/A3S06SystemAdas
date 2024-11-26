@@ -28,10 +28,27 @@ static i2c_port_t i2c_port = I2C_NUM_0; /**< I2C port used for communication wit
 
 static uint8_t backlight_state = LCD_BL_BIT; /**< Stores the current state of the backlight. */
 
+// Fonction pour écrire un octet sur le LCD2
+static esp_err_t lcd_write_byte(uint8_t cmd, bool is_data) {
+    uint8_t high_nibble = (cmd & 0xF0) | backlight_state;
+    uint8_t low_nibble = ((cmd << 4) & 0xF0) | backlight_state;
+    
+    if (is_data) {
+        high_nibble |= LCD_RS_BIT;
+        low_nibble |= LCD_RS_BIT;
+    }
 
+    uint8_t data[4];
+    data[0] = high_nibble | LCD_EN_BIT;
+    data[1] = high_nibble;
+    data[2] = low_nibble | LCD_EN_BIT;
+    data[3] = low_nibble;
+
+    return i2c_master_write_to_device(i2c_port, LCD_I2C_ADDR, data, 4, 1000 / portTICK_PERIOD_MS);
+}
 
 // Fonction pour envoyer une commande au LCD2
-static void lcd_send_cmd(uint8_t cmd) {
+void lcd_send_cmd(uint8_t cmd) {
     lcd_write_byte(cmd, false);
     if (cmd == LCD_CLEARDISPLAY || cmd == LCD_RETURNHOME) {
         vTaskDelay(2 / portTICK_PERIOD_MS);

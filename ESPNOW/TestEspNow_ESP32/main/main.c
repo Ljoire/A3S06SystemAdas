@@ -26,8 +26,8 @@
 #include "hc_sr04.h"
 #include "i2c_lcd.h"
 #include "i2c_lcd2.h"
-#include "nvs.h"
 #include "espnow_example.h"
+#include "nvs.h"
 
 
 
@@ -39,7 +39,7 @@
 static const char *TAG = "main";
 
 //declaration en externe pour accès depuis plusieurs fichier sources
-extern sensor_data_t *PData;
+sensor_data_t *PData;
 
 void app_main() {
     ESP_LOGI(TAG, "Starting vehicle sensor system...");

@@ -128,7 +128,7 @@ float measure_distance_cm(hc_sr04_t *sensor) {
  *
  * @param pvParameters Pointer to the `sensor_data_t` structure for storing sensor data.
  */
-static void sensor_task(void *pvParameters) {
+void sensor_task(void *pvParameters) {
     sensor_data_t *sensor_data = (sensor_data_t *)pvParameters;
 
     hc_sr04_t sensors[] = {
