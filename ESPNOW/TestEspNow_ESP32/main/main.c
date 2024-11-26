@@ -22,30 +22,25 @@
 #include "freertos/semphr.h"
 #include "driver/gpio.h"
 #include "esp_timer.h"
+
 #include "hc_sr04.h"
 #include "i2c_lcd.h"
 #include "i2c_lcd2.h"
 #include "espnow_example.h"
 #include "nvs.h"
 
-// Définition des priorités des tâches
-#define SENSOR_TASK_PRIORITY    (tskIDLE_PRIORITY + 3)
-#define DISPLAY_TASK_PRIORITY   (tskIDLE_PRIORITY + 2)
 
-// Taille des piles pour les tâches
-#define SENSOR_STACK_SIZE       (configMINIMAL_STACK_SIZE * 2)
-#define DISPLAY_STACK_SIZE      (configMINIMAL_STACK_SIZE * 2)
 
 
 
 
 // Variables globales
 static QueueHandle_t sensor_queue;
-static SemaphoreHandle_t i2c_mutex;
+//static SemaphoreHandle_t i2c_mutex;
 static const char *TAG = "main";
 
 //declaration en externe pour accès depuis plusieurs fichier sources
-extern sensor_data_t *PData = NULL;
+extern sensor_data_t *PData;
 
 void app_main() {
     ESP_LOGI(TAG, "Starting vehicle sensor system...");
@@ -53,7 +48,7 @@ void app_main() {
 
     //accession a sensor_data
     sensor_data_t sensor_data;
-    Pdata = &sensor_data;
+    PData = &sensor_data;
 
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK( nvs_flash_erase() );
@@ -92,7 +87,7 @@ void app_main() {
         sensor_task,
         "SENSOR",
         SENSOR_STACK_SIZE,
-        sensor_data,
+        &PData,
         SENSOR_TASK_PRIORITY,
         NULL
     );

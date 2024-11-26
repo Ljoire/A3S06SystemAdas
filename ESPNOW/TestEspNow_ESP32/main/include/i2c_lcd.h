@@ -40,6 +40,11 @@
 #define LCD_SETCGRAMADDR    0x40 /**< Command to set the CGRAM address for custom characters. */
 #define LCD_SETDDRAMADDR    0x80 /**< Command to set the DDRAM address for display data. */
 
+// Définition des priorités des tâches
+#define DISPLAY_TASK_PRIORITY   (tskIDLE_PRIORITY + 2)
+// Taille des piles pour les tâches
+#define DISPLAY_STACK_SIZE      (configMINIMAL_STACK_SIZE * 2)
+
 /**
  * @brief Flags for display control.
  *
@@ -105,5 +110,7 @@ void lcd_print(const char* str);
  * @param on Set to `true` to enable the backlight, or `false` to disable it.
  */
 void lcd_backlight(bool on);
+
+static void display_task(void *pvParameters);
 
 #endif // I2C_LCD_H

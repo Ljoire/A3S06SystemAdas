@@ -1,12 +1,18 @@
-#include "i2c_lcd2.h"
 #include <esp_log.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "portmacro.h"
+#include "hc_sr04.h"
+#include "i2c_lcd2.h"
+#include "espnow_example.h"
+#include "i2c_lcd.h"
+
 
 static const char *TAG = "LCD2";
 static i2c_port_t i2c_port2 = I2C_NUM_1; // Utilisation du second port I2C
 static uint8_t backlight_state2 = 0x08;   // État initial du rétroéclairage
+SemaphoreHandle_t
 
 // Bits de contrôle PCF8574
 #define LCD2_RS_BIT      0x01
@@ -42,6 +48,14 @@ static void lcd2_send_cmd(uint8_t cmd) {
     } else {
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
+}
+
+// Création du mutex I2C
+static SemaphoreHandle_t i2c_mutex = xSemaphoreCreateMutex();
+
+if (i2c_mutex == NULL) {
+    ESP_LOGE(TAG, "Failed to create I2C mutex");
+    return;
 }
 
 // Initialisation du LCD2
@@ -111,7 +125,7 @@ void lcd2_backlight(bool on) {
 }
 
 
-static void display_task(void *pvParameters) {
+void display_task(void *pvParameters) {
     
     sensor_data_t sensor_data = *pvParameters;
     

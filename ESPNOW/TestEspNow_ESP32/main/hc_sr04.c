@@ -15,6 +15,15 @@
 #include <math.h>
 #include <portmacro.h>
 
+/* FreeRTOS Libraries */
+#include "freertos/FreeRTOS.h"   /**< FreeRTOS API for real-time operating system tasks and queues. */
+#include "freertos/semphr.h"     /**< FreeRTOS API for semaphore and mutex operations. */
+#include "freertos/timers.h"     /**< FreeRTOS API for software timers. */
+#include "freertos/task.h"       /**< FreeRTOS API for task management. */
+
+
+#include "esp_timer.h"           /**< Timer library for high-resolution timing and delays. */
+
 /**
  * @brief Validates a measured distance.
  *

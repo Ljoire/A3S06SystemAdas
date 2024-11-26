@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2024
  * 
  */
- */
+ 
 
 /*
    This example shows how to use ESPNOW.
@@ -221,8 +221,8 @@ static void example_espnow_task(void *pvParameter)
         vTaskDelete(NULL);
     }
 
-    uint8_t Receiver_counter = CUSTOM_SEND_COUNT;
-    uint8_t Frame_counter = FRAMECOUNTER;
+    //uint8_t Receiver_counter = CUSTOM_SEND_COUNT;
+    //uint8_t Frame_counter = FRAMECOUNTER;
 
     while (xQueueReceive(s_example_espnow_queue, &evt, portMAX_DELAY) == pdTRUE) 
     {
@@ -371,7 +371,7 @@ void espnow_sending_task(void *pvParameter) {
         if (xQueueReceive(data_queue_2other_ESPNOW, &sensor_data, portMAX_DELAY) == pdTRUE) {
                 // Appel de la fonction d'envoi ESPNOW avec les données reçues
                 ESP_LOGI(TAG,"Inside the sending task function");
-                espnow_datasending(send_param,&sensor_data,send_param->dest_mac);
+                espnow_datasending(send_param,sensor_data,send_param->dest_mac);
 
                 // Délai pour éviter un envoi excessif
                 vTaskDelay(pdMS_TO_TICKS(100));  // Ajustez le délai selon les besoins

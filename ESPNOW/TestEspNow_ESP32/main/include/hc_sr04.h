@@ -32,6 +32,9 @@
 #define TRIGGER_GPIO_AR   GPIO_NUM_4  /**< Trigger pin for Rear sensor. */
 #define ECHO_GPIO_AR      GPIO_NUM_16 /**< Echo pin for Rear sensor. */
 
+#define SENSOR_TASK_PRIORITY    (tskIDLE_PRIORITY + 3)
+#define SENSOR_STACK_SIZE       (configMINIMAL_STACK_SIZE * 2)
+
 /**
  * @brief Structure representing an HC-SR04 sensor.
  */
