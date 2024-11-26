@@ -26,8 +26,8 @@
 #include "hc_sr04.h"
 #include "i2c_lcd.h"
 #include "i2c_lcd2.h"
-#include "espnow_example.h"
 #include "nvs.h"
+#include "espnow_example.h"
 
 
 

@@ -105,6 +105,28 @@ void lcd_set_cursor(uint8_t row, uint8_t col);
 void lcd_print(const char* str);
 
 /**
+ * @brief Writes a byte to the LCD over I2C.
+ *
+ * Sends a byte to the LCD in 4-bit mode by splitting it into a high and low nibble.
+ * The data is sent along with control signals such as RS, RW, EN, and BL.
+ *
+ * @param cmd The byte to write (command or data).
+ * @param is_data Set to `true` for data, or `false` for command.
+ * @return esp_err_t Returns `ESP_OK` on success, or an error code on failure.
+ */
+static esp_err_t lcd_write_byte(uint8_t cmd, bool is_data);
+
+/**
+ * @brief Sends a command to the LCD.
+ *
+ * Sends a command byte to the LCD using the `lcd_write_byte` function.
+ * Adds appropriate delays for specific commands like `LCD_CLEARDISPLAY` and `LCD_RETURNHOME`.
+ *
+ * @param cmd The command byte to send.
+ */
+void lcd_send_cmd(uint8_t cmd);
+
+/**
  * @brief Controls the LCD backlight.
  *
  * @param on Set to `true` to enable the backlight, or `false` to disable it.

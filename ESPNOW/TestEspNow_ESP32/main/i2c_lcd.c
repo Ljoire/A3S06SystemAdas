@@ -28,27 +28,18 @@ static i2c_port_t i2c_port = I2C_NUM_0; /**< I2C port used for communication wit
 
 static uint8_t backlight_state = LCD_BL_BIT; /**< Stores the current state of the backlight. */
 
-/**
- * @brief Writes a byte to the LCD over I2C.
- *
- * Sends a byte to the LCD in 4-bit mode by splitting it into a high and low nibble.
- * The data is sent along with control signals such as RS, RW, EN, and BL.
- *
- * @param cmd The byte to write (command or data).
- * @param is_data Set to `true` for data, or `false` for command.
- * @return esp_err_t Returns `ESP_OK` on success, or an error code on failure.
- */
-static esp_err_t lcd_write_byte(uint8_t cmd, bool is_data);
 
-/**
- * @brief Sends a command to the LCD.
- *
- * Sends a command byte to the LCD using the `lcd_write_byte` function.
- * Adds appropriate delays for specific commands like `LCD_CLEARDISPLAY` and `LCD_RETURNHOME`.
- *
- * @param cmd The command byte to send.
- */
-static void lcd_send_cmd(uint8_t cmd);
+
+// Fonction pour envoyer une commande au LCD2
+static void lcd_send_cmd(uint8_t cmd) {
+    lcd_write_byte(cmd, false);
+    if (cmd == LCD_CLEARDISPLAY || cmd == LCD_RETURNHOME) {
+        vTaskDelay(2 / portTICK_PERIOD_MS);
+    } else {
+        vTaskDelay(1 / portTICK_PERIOD_MS);
+    }
+}
+
 
 void lcd_init(void) {
     /**
