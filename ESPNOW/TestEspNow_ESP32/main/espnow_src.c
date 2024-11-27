@@ -127,14 +127,6 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
     *state = buf->state;
     *seq = buf->seq_num;
     *magic = buf->magic;
-    /*******DEBUG
-    payload = buf->payload;//assign to it
-    for (int i = 0; i < sizeof(buf->payload); i++) {
-        printf("%02X ", buf->payload[i]);
-    }
-    printf(" is the data parsed inside the parser \n");
-    // Copy the payload with boundary checking
-    //printf("%d len", payload_len);*/
 
     size_t copy_len = (payload_len < sizeof(buf->payload)) ? payload_len : sizeof(buf->payload);
     memcpy(payload, buf->payload, copy_len);
@@ -297,31 +289,12 @@ static void example_espnow_task(void *pvParameter)
                     }
 
                     if (recv_state == 0) {
-                        /*      COMMENT FOR FURTHER USAGE
-                        if (send_param->unicast == false && send_param->magic >= recv_magic) {//map an high value for the sender
-
-                            ESP_LOGI(TAG, "We suspend the task for call it back in a main function");
-                            //vTaskSuspend(&ESPNOW_data_handler);
-
-                            printf("My magic number is : %d and the received is :%d", send_param->magic, recv_magic);
-                            ESP_LOGI(TAG, "Start sending unicast data");
-                            ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
-                            printf("we passed here \n");
-                            send_param->pingpong = true;
-                            send_param->unicast = true;
-                            send_param->broadcast = false;
-                            //espnow_datasending(send_param, (uint8_t *)"StrUniM", recv_cb->mac_addr);
-                            break;
-                        } else {
-                        */
-                            
                             send_param->broadcast = false;
                             send_param->unicast = true;
                             send_param->pingpong = true;// We have to set pingpong to true when we want to send some data in the main
                             memcpy(send_param->dest_mac,recv_cb->mac_addr,ESP_NOW_ETH_ALEN);
                             ESP_LOGI(TAG, "The mac adress copied  is : "MACSTR"", MAC2STR(send_param->dest_mac));
                             break;
-                        //}
                     }
                 } else if (ret == EXAMPLE_ESPNOW_DATA_UNICAST) {
 
@@ -334,8 +307,6 @@ static void example_espnow_task(void *pvParameter)
                     //passage d'une valeur en dur pour lest test
                     uint8_t pParsermessage = 0x01;//&parserMessage;
                     ESP_LOGI(TAG,"%s is the data parsed \n",parserMessage);
-                    //Send the parsed data to the queue for treatment
-                /* NEED TO INTEGRATE SOMETHING FOR SELECT WHERE TO SEND FROM THE PARSED MESSAGE*/
                     if (xQueueSend(receive_calback_queue, &pParsermessage, ESPNOW_MAXDELAY) != pdTRUE) {
                             ESP_LOGW(TAG, "Send send queue fail");
                         }
