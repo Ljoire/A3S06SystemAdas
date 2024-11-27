@@ -155,7 +155,7 @@ void display_task(void *pvParameters) {
         if(uxQueueMessagesWaiting(receive_calback_queue) == 0){
             ESP_LOGI(TAG,"La queue est vide");
         }*/
-        if(xQueueReceive(receive_calback_queue,&DataFromEspNow,pdMS_TO_TICKS(2)) == pdTRUE){
+        if(xQueueReceive(receive_calback_queue,&DataFromEspNow,ESPNOW_MAXDELAY) == pdTRUE){
             ESP_LOGI(TAG,"The data received is : %u",DataFromEspNow);
             is_dataFromESP = true;
         }
