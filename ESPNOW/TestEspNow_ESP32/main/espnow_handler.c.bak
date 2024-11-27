@@ -1,0 +1,75 @@
+#include "espnow_handler.h"
+
+static const char *TAG = "ESPNOW_HANDLER";
+QueueHandle_t espnow_send_queue;
+
+// Callback pour l'envoi
+static void espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status) {
+    if (status != ESP_NOW_SEND_SUCCESS) {
+        ESP_LOGW(TAG, "Échec de l'envoi ESP-NOW");
+    }
+}
+
+esp_err_t espnow_init(uint8_t channel) {
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
+
+    ESP_ERROR_CHECK(esp_now_init());
+    ESP_ERROR_CHECK(esp_now_register_send_cb(espnow_send_cb));
+
+    // Création de la file d'attente d'envoi
+    espnow_send_queue = xQueueCreate(10, sizeof(espnow_data_t));
+    if (espnow_send_queue == NULL) {
+        ESP_LOGE(TAG, "Échec de création de la file d'attente");
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t espnow_add_peer(const uint8_t *peer_addr) {
+    esp_now_peer_info_t peer = {
+        .channel = 0,
+        .ifidx = ESP_IF_WIFI_STA,
+        .encrypt = false,
+    };
+    memcpy(peer.peer_addr, peer_addr, ESP_NOW_ETH_ALEN);
+    return esp_now_add_peer(&peer);
+}
+
+esp_err_t espnow_send_message(const uint8_t *peer_addr, const espnow_data_t *data) {
+    return esp_now_send(peer_addr, (const uint8_t *)data, sizeof(espnow_data_t));
+}
+
+void espnow_send_task(void *pvParameter) {
+    static uint32_t last_send_time = 0;
+    static espnow_data_t last_data = {0};
+    const uint8_t *peer_addr = (const uint8_t *)pvParameter;
+    
+    while (1) {
+        espnow_data_t data;
+        if (xQueueReceive(espnow_send_queue, &data, pdMS_TO_TICKS(100)) == pdTRUE) {
+            uint32_t current_time = xTaskGetTickCount() * portTICK_PERIOD_MS;
+            
+            // Envoie seulement si les données ont changé ou après 1 seconde
+            if (memcmp(&last_data, &data, sizeof(espnow_data_t)) != 0 ||
+                (current_time - last_send_time) >= 1000) {
+                
+                if (espnow_send_message(peer_addr, &data) == ESP_OK) {
+                    last_send_time = current_time;
+                    memcpy(&last_data, &data, sizeof(espnow_data_t));
+                }
+                
+                // Délai entre les envois pour éviter la surcharge
+                vTaskDelay(pdMS_TO_TICKS(50));
+            }
+        }
+    }
+}

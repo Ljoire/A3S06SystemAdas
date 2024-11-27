@@ -1,0 +1,33 @@
+#ifndef ESPNOW_HANDLER_H
+#define ESPNOW_HANDLER_H
+
+#include <esp_now.h>
+#include <esp_wifi.h>
+#include <esp_log.h>
+#include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+
+// Structure du message ESP-NOW
+typedef struct {
+    uint8_t type;        // 0: système actif, 1: alerte
+    float distance;      // Distance mesurée
+} espnow_data_t;
+
+// File d'attente pour les messages à envoyer
+extern QueueHandle_t espnow_send_queue;
+
+// Initialisation du WiFi et ESP-NOW
+esp_err_t espnow_init(uint8_t channel);
+
+// Ajout d'un pair ESP-NOW
+esp_err_t espnow_add_peer(const uint8_t *peer_addr);
+
+// Envoi d'un message via ESP-NOW
+esp_err_t espnow_send_message(const uint8_t *peer_addr, const espnow_data_t *data);
+
+// Tâche d'envoi ESP-NOW
+void espnow_send_task(void *pvParameter);
+
+#endif // ESPNOW_HANDLER_H

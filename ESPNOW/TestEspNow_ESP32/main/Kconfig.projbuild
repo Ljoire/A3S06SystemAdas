@@ -1,86 +1,53 @@
-menu "Example Configuration"
+menu "Configuration ESPNOW ADAS"
 
-    choice ESPNOW_WIFI_MODE
-        prompt "WiFi mode"
-        default ESPNOW_WIFI_MODE_STATION
+    config ESPNOW_WIFI_MODE
+        int "Mode WiFi"
+        default 1
         help
-            WiFi mode(station or softap).
+            Mode WiFi pour ESPNOW (1 = Station)
 
-        config ESPNOW_WIFI_MODE_STATION
-            bool "Station"
-        config ESPNOW_WIFI_MODE_STATION_SOFTAP
-            bool "Softap"
-    endchoice
-
-    config ESPNOW_PMK
-        string "ESPNOW primary master key"
-        default "pmk1234567890123"
+    config ESPNOW_WIFI_IF
+        int "Interface WiFi"
+        default 0
         help
-            ESPNOW primary master for the example to use. The length of ESPNOW primary master must be 16 bytes.
-
-    config ESPNOW_LMK
-        string "ESPNOW local master key"
-        default "lmk1234567890123"
-        help
-            ESPNOW local master for the example to use. The length of ESPNOW local master must be 16 bytes.
+            Interface WiFi (0 = STA)
 
     config ESPNOW_CHANNEL
-        int "Channel"
+        int "Canal WiFi"
         default 1
-        range 0 14
+        range 1 13
         help
-            The channel on which sending and receiving ESPNOW data.
+            Canal WiFi pour la communication ESPNOW
 
-    config ESPNOW_SEND_COUNT
-        int "Send count"
-        default 100
-        range 1 65535
+    config ESPNOW_PMK
+        string "Clé primaire ESPNOW"
+        default "pmk1234567890123"
         help
-            Total count of unicast ESPNOW data to be sent.
+            Clé principale ESPNOW (16 caractères)
 
-    config ESPNOW_SEND_DELAY
-        int "Send delay"
-        default 1000
-        range 0 65535
+    config ESPNOW_LMK
+        string "Clé locale ESPNOW"
+        default "lmk1234567890123"
         help
-            Delay between sending two ESPNOW data, unit: ms.
+            Clé locale ESPNOW (16 caractères)
 
-    config ESPNOW_SEND_LEN
-        int "Send len"
-        range 10 250
-        default 10
+    config ESPNOW_QUEUE_SIZE
+        int "Taille de la file d'attente ESPNOW"
+        default 6
+        range 1 64
         help
-            Length of ESPNOW data to be sent, unit: byte.
+            Nombre maximal de messages ESPNOW dans la file d'attente
 
     config ESPNOW_ENABLE_LONG_RANGE
-        bool "Enable Long Range"
-        default "n"
+        bool "Activer longue portée"
+        default n
         help
-            When enable long range, the PHY rate of ESP32 will be 512Kbps or 256Kbps
+            Active le mode longue portée pour ESPNOW
 
     config ESPNOW_ENABLE_POWER_SAVE
-        bool "Enable ESPNOW Power Save"
-        default "n"
-        select ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
-        depends on ESPNOW_WIFI_MODE_STATION
+        bool "Activer économie d'énergie"
+        default n
         help
-            With ESPNOW power save enabled, chip would be able to wakeup and sleep periodically
-            Notice ESP_WIFI_STA_DISCONNECTED_PM_ENABLE is essential at Wi-Fi disconnected
-
-    config ESPNOW_WAKE_WINDOW
-        int "ESPNOW wake window, unit in millisecond"
-        range 0 65535
-        default 50
-        depends on ESPNOW_ENABLE_POWER_SAVE
-        help
-            ESPNOW wake window
-
-    config ESPNOW_WAKE_INTERVAL
-        int "ESPNOW wake interval, unit in millisecond"
-        range 1 65535
-        default 100
-        depends on ESPNOW_ENABLE_POWER_SAVE
-        help
-            ESPNOW wake interval
+            Active le mode économie d'énergie
 
 endmenu

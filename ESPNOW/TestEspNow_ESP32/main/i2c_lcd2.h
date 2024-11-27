@@ -32,9 +32,6 @@
 #define LCD2_ENTRYSHIFTINCREMENT 0x01
 #define LCD2_ENTRYSHIFTDECREMENT 0x00
 
-static SemaphoreHandle_t i2c_mutex;
-extern QueueHandle_t sensor_queue;
-
 // Fonctions pour le second LCD
 void lcd2_init(void);
 void lcd2_clear(void);
@@ -42,7 +39,5 @@ void lcd2_home(void);
 void lcd2_set_cursor(uint8_t row, uint8_t col);
 void lcd2_print(const char* str);
 void lcd2_backlight(bool on);
-void init_i2c_mutex(void);
-void display_task(void *pvParameters);
 
 #endif // I2C_LCD2_H

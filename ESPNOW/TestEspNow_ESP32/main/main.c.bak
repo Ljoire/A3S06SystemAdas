@@ -80,19 +80,18 @@ static void sensor_task(void *pvParameters) {
         sensor_data.dist_av = measure_distance_cm(&sensor_av);
         
         // Vérification pour l'envoi d'alerte
+		// Dans la fonction sensor_task, remplacer la partie qui vérifie la distance et envoie les messages :
 		if (is_valid_measurement(sensor_data.dist_av)) {
 			if (sensor_data.dist_av <= 5) {
-				// Distance critique - envoyer le message d'alerte
+				// N'envoyer le message que si l'état a changé
 				if (last_state != 0) {
 					espnow_send_message(receiver_mac, "Att. F. Urg !");
 					last_state = 0;
+					last_send_time = xTaskGetTickCount() * portTICK_PERIOD_MS;
 				}
 			} else {
-				// Distance > 5cm - envoyer un message vide pour effacer son LCD
-				if (last_state != 1) {
-					espnow_send_message(receiver_mac, "");  // Message vide
-					last_state = 1;
-				}
+				// Distance > 5cm, mettre à jour l'état sans envoyer de message
+				last_state = 1;
 			}
 		}
 
