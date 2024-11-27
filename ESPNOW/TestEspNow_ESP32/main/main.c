@@ -33,9 +33,6 @@
 
 
 
-
-
-SemaphoreHandle_t i2c_mutex;
 static const char *TAG = "main";
 
 //declaration en externe pour accès depuis plusieurs fichier sources
@@ -89,11 +86,11 @@ void app_main() {
         return;
     }
     
-    // Tâche des capteurs
+    /* Tâche des capteurs
     xReturned = xTaskCreate(
         sensor_task,
         "SENSOR",
-        SENSOR_STACK_SIZE,
+        SENSOR_STACK_SIZE * 3,
         &PData,
         SENSOR_TASK_PRIORITY,
         NULL
@@ -101,7 +98,7 @@ void app_main() {
     if (xReturned != pdPASS) {
         ESP_LOGE(TAG, "Failed to create sensor task");
         return;
-    }
+    }*/
 
 
     ESP_LOGI(TAG, "All tasks created successfully");

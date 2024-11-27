@@ -148,23 +148,24 @@ void display_task(void *pvParameters) {
     uint8_t DataFromEspNow = 0x00;
     bool is_dataFromESP = false;
     while (1) {
-        //si reception ESPNOW
-        if(receive_calback_queue ==NULL){
-            ESP_LOGW(TAG,"mutex null");
+        /*si reception ESPNOW
+        if(receive_calback_queue == NULL){
+            ESP_LOGW(TAG,"la queue est  null");
         }
         if(uxQueueMessagesWaiting(receive_calback_queue) == 0){
             ESP_LOGI(TAG,"La queue est vide");
-        }
+        }*/
         if(xQueueReceive(receive_calback_queue,&DataFromEspNow,pdMS_TO_TICKS(2)) == pdTRUE){
             ESP_LOGI(TAG,"The data received is : %u",DataFromEspNow);
             is_dataFromESP = true;
         }
-        ESP_LOGI(TAG,"after receive callback queue");
+        //SP_LOGI(TAG,"after receive callback queue");
 
-        if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS) {
+        //if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS) {
             // Prendre le mutex I2C
             if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
                 // Effacement des écrans
+                //ESP_LOGI(TAG,"inside the treatment function");
                 lcd_clear();
                 lcd2_clear();
                 vTaskDelay(pdMS_TO_TICKS(10));
@@ -265,6 +266,6 @@ void display_task(void *pvParameters) {
                 // remise à 0 de l'octet d'alerte
                 DataToEspNow = 0x00;
             }
-        }
+        //}
     }
 }
