@@ -32,7 +32,7 @@
 #define LCD2_ENTRYSHIFTINCREMENT 0x01
 #define LCD2_ENTRYSHIFTDECREMENT 0x00
 
-static SemaphoreHandle_t i2c_mutex;
+extern SemaphoreHandle_t i2c_mutex;
 extern QueueHandle_t sensor_queue;
 
 // Fonctions pour le second LCD

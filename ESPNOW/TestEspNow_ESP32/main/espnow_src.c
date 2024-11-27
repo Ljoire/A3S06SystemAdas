@@ -391,7 +391,7 @@ esp_err_t example_espnow_init(void *pvParameter)
 
     receive_calback_queue = xQueueCreate(ESPNOW_QUEUE_SIZE,sizeof(char*));
     if (s_example_espnow_queue == NULL) {
-        ESP_LOGE(TAG, "Create mutex fail");
+        ESP_LOGE(TAG, "Callback queue fail");
         return ESP_FAIL;
     }
 

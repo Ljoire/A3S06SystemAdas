@@ -49,13 +49,6 @@ static void lcd2_send_cmd(uint8_t cmd) {
     }
 }
 
-void init_i2c_mutex(void) {
-    i2c_mutex = xSemaphoreCreateMutex();
-    if (i2c_mutex == NULL) {
-        ESP_LOGE(TAG, "Failed to create I2C mutex");
-        return;
-    }
-}
 
 // Initialisation du LCD2
 void lcd2_init(void) {
@@ -127,7 +120,13 @@ void lcd2_backlight(bool on) {
 void display_task(void *pvParameters) {
     
     sensor_data_t sensor_data = *(sensor_data_t *)pvParameters;
-    
+    SemaphoreHandle_t i2c_mutex;
+    // Création du mutex I2C
+    i2c_mutex = xSemaphoreCreateMutex();
+    if (i2c_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create I2C mutex");
+        return;
+    }
     char buffer[21]; // Buffer assez grand pour LCD 4x20
 
     // Initialisation des LCD avec protection mutex
@@ -136,18 +135,31 @@ void display_task(void *pvParameters) {
         lcd2_init();
         lcd_backlight(true);
         lcd2_backlight(true);
+        if(i2c_mutex == NULL){
+            ESP_LOGW(TAG,"mutex null");
+        }
+        ESP_LOGI(TAG,"here");
         xSemaphoreGive(i2c_mutex);
+        ESP_LOGI(TAG,"after the give");
     }
+    ESP_LOGI(TAG,"out of the semaphore take");
     uint8_t DataToEspNow = 0x00;
     bool is_DATA2send = false;
     uint8_t DataFromEspNow = 0x00;
     bool is_dataFromESP = false;
     while (1) {
         //si reception ESPNOW
-        if(xQueueReceive(receive_calback_queue,&DataFromEspNow,ESPNOW_MAXDELAY) == pdTRUE){
+        if(receive_calback_queue ==NULL){
+            ESP_LOGW(TAG,"mutex null");
+        }
+        if(uxQueueMessagesWaiting(receive_calback_queue) == 0){
+            ESP_LOGI(TAG,"La queue est vide");
+        }
+        if(xQueueReceive(receive_calback_queue,&DataFromEspNow,pdMS_TO_TICKS(2)) == pdTRUE){
             ESP_LOGI(TAG,"The data received is : %u",DataFromEspNow);
             is_dataFromESP = true;
         }
+        ESP_LOGI(TAG,"after receive callback queue");
 
         if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS) {
             // Prendre le mutex I2C

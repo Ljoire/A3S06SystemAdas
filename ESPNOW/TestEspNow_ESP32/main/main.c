@@ -35,7 +35,7 @@
 
 
 
-//static SemaphoreHandle_t i2c_mutex;
+SemaphoreHandle_t i2c_mutex;
 static const char *TAG = "main";
 
 //declaration en externe pour accès depuis plusieurs fichier sources
@@ -71,15 +71,23 @@ void app_main() {
         return;
     }
 
-    // Création du mutex I2C
-    i2c_mutex = xSemaphoreCreateMutex();
-    if (i2c_mutex == NULL) {
-        ESP_LOGE(TAG, "Failed to create I2C mutex");
-        return;
-    }
+
 
     // Création des tâches
     BaseType_t xReturned;
+    // Tâche d'affichage
+    xReturned = xTaskCreate(
+        display_task,
+        "DISPLAY",
+        DISPLAY_STACK_SIZE,
+        &PData,
+        DISPLAY_TASK_PRIORITY,
+        NULL
+    );
+    if (xReturned != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create display task");
+        return;
+    }
     
     // Tâche des capteurs
     xReturned = xTaskCreate(
@@ -95,19 +103,6 @@ void app_main() {
         return;
     }
 
-    // Tâche d'affichage
-    xReturned = xTaskCreate(
-        display_task,
-        "DISPLAY",
-        DISPLAY_STACK_SIZE,
-        &PData,
-        DISPLAY_TASK_PRIORITY,
-        NULL
-    );
-    if (xReturned != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create display task");
-        return;
-    }
 
     ESP_LOGI(TAG, "All tasks created successfully");
 }
