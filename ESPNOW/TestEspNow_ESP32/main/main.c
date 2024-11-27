@@ -36,15 +36,15 @@
 static const char *TAG = "main";
 
 //declaration en externe pour accès depuis plusieurs fichier sources
-sensor_data_t *PData;
+
+sensor_data_t sensor_data;
 
 void app_main() {
+
     ESP_LOGI(TAG, "Starting vehicle sensor system...");
     esp_err_t ret = nvs_flash_init();
 
     //accession a sensor_data
-    sensor_data_t sensor_data;
-    PData = &sensor_data;
 
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK( nvs_flash_erase() );
@@ -77,7 +77,7 @@ void app_main() {
         display_task,
         "DISPLAY",
         DISPLAY_STACK_SIZE,
-        &PData,
+        &sensor_data,
         DISPLAY_TASK_PRIORITY,
         NULL
     );
@@ -86,19 +86,19 @@ void app_main() {
         return;
     }
     
-    /* Tâche des capteurs
+    // Tâche des capteurs
     xReturned = xTaskCreate(
         sensor_task,
         "SENSOR",
         SENSOR_STACK_SIZE * 3,
-        &PData,
+        &sensor_data,
         SENSOR_TASK_PRIORITY,
         NULL
     );
     if (xReturned != pdPASS) {
         ESP_LOGE(TAG, "Failed to create sensor task");
         return;
-    }*/
+    }
 
 
     ESP_LOGI(TAG, "All tasks created successfully");

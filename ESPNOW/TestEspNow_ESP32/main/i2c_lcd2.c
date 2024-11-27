@@ -140,9 +140,9 @@ void display_task(void *pvParameters) {
         }
         ESP_LOGI(TAG,"here");
         xSemaphoreGive(i2c_mutex);
-        ESP_LOGI(TAG,"after the give");
+        //ESP_LOGI(TAG,"after the give");
     }
-    ESP_LOGI(TAG,"out of the semaphore take");
+    //ESP_LOGI(TAG,"out of the semaphore take");
     uint8_t DataToEspNow = 0x00;
     bool is_DATA2send = false;
     uint8_t DataFromEspNow = 0x00;
@@ -161,7 +161,7 @@ void display_task(void *pvParameters) {
         }
         //SP_LOGI(TAG,"after receive callback queue");
 
-        //if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS) {
+        if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(2)) == pdPASS) {
             // Prendre le mutex I2C
             if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
                 // Effacement des écrans
@@ -266,6 +266,6 @@ void display_task(void *pvParameters) {
                 // remise à 0 de l'octet d'alerte
                 DataToEspNow = 0x00;
             }
-        //}
+        }
     }
 }

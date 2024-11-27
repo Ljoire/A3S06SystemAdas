@@ -22,6 +22,8 @@
 
 
 #include "esp_timer.h"           /**< Timer library for high-resolution timing and delays. */
+#include <esp_log.h>
+static const char *TAG = "LCD2";
 
 /**
  * @brief Validates a measured distance.
@@ -130,7 +132,9 @@ float measure_distance_cm(hc_sr04_t *sensor) {
  */
 void sensor_task(void *pvParameters) {
     sensor_data_t *sensor_data = (sensor_data_t *)pvParameters;
-
+    if (sensor_data == NULL) {
+        ESP_LOGE(TAG, "Invalid sensor data pointer");
+    }
     hc_sr04_t sensors[] = {
         {TRIGGER_GPIO_AV, ECHO_GPIO_AV},
         {TRIGGER_GPIO_G, ECHO_GPIO_G},
