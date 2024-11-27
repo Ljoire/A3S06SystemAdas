@@ -161,111 +161,109 @@ void display_task(void *pvParameters) {
         }
         //SP_LOGI(TAG,"after receive callback queue");
 
-        if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(2)) == pdPASS) {
-            // Prendre le mutex I2C
-            if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
-                // Effacement des écrans
-                //ESP_LOGI(TAG,"inside the treatment function");
-                lcd_clear();
-                lcd2_clear();
-                vTaskDelay(pdMS_TO_TICKS(10));
+        // Prendre le mutex I2C
+        if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
+            // Effacement des écrans
+            //ESP_LOGI(TAG,"inside the treatment function");
+            lcd_clear();
+            lcd2_clear();
+            vTaskDelay(pdMS_TO_TICKS(10));
 
-                // LCD2 - Ligne 1 (AV)
-                lcd2_set_cursor(0, 0);
-                if (is_valid_measurement(sensor_data.dist_av) || is_dataFromESP) {// && compteur = 0 || reception ESPNOW
-                    if (is_dataFromESP && (DataFromEspNow & 0x02)){ //si le bit n°1 est a 1
-                        snprintf(buffer, sizeof(buffer), "Att. Freinez !");
-                    }
-                    else if (sensor_data.dist_av > 5) {
-                        snprintf(buffer, sizeof(buffer), "AV: %.1fcm", sensor_data.dist_av);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Att. F. Urgence !");
-                        is_DATA2send = true;
-                        DataToEspNow = DataToEspNow | 0x02;
-                    }
-                    lcd2_print(buffer);
+            // LCD2 - Ligne 1 (AV)
+            lcd2_set_cursor(0, 0);
+            if (is_valid_measurement(sensor_data.dist_av) || is_dataFromESP) {// && compteur = 0 || reception ESPNOW
+                if (is_dataFromESP && (DataFromEspNow & 0x02)){ //si le bit n°1 est a 1
+                    snprintf(buffer, sizeof(buffer), "Att. Freinez !");
                 }
-                // compteur --;
-                // LCD1 - Ligne 1 (G)
-                lcd_set_cursor(0, 0);
-                if (is_valid_measurement(sensor_data.dist_g)) {
-                    if (sensor_data.dist_g > 10) {
-                        snprintf(buffer, sizeof(buffer), "G: %.1fcm", sensor_data.dist_g);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Angle mort G !");
-                    }
-                    lcd_print(buffer);
+                else if (sensor_data.dist_av > 5) {
+                    snprintf(buffer, sizeof(buffer), "AV: %.1fcm", sensor_data.dist_av);
+                } else {
+                    snprintf(buffer, sizeof(buffer), "Att. F. Urgence !");
+                    is_DATA2send = true;
+                    DataToEspNow = DataToEspNow | 0x02;
                 }
-
-                // LCD1 - Ligne 2 (D)
-                lcd_set_cursor(1, 0);
-                if (is_valid_measurement(sensor_data.dist_d)) {
-                    if (sensor_data.dist_d > 10) {
-                        snprintf(buffer, sizeof(buffer), "D: %.1fcm", sensor_data.dist_d);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Angle mort D !");
-                    }
-                    lcd_print(buffer);
-                }
-
-                // LCD2 - Ligne 2 (AVG)
-                lcd2_set_cursor(1, 0);
-                if (is_valid_measurement(sensor_data.dist_av) && 
-                    is_valid_measurement(sensor_data.dist_avg) && 
-                    is_valid_measurement(sensor_data.dist_g)) {
-                    if (sensor_data.dist_av > 5 && 
-                        sensor_data.dist_avg > 20 && 
-                        sensor_data.dist_g > 10) {
-                        snprintf(buffer, sizeof(buffer), "AVG: %.1fcm", sensor_data.dist_avg);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
-                        //mise du flag d'envoie a 1. Est nettoyé lorsque la donnée est envoyé
-                        //is_DATA2send = true;
-                    }
-                    lcd2_print(buffer);
-                }
-
-                // LCD2 - Ligne 3 (AVD)
-                lcd2_set_cursor(2, 0);
-                if (is_valid_measurement(sensor_data.dist_av) && 
-                    is_valid_measurement(sensor_data.dist_avd) && 
-                    is_valid_measurement(sensor_data.dist_d)) {
-                    if (sensor_data.dist_av > 5 && 
-                        sensor_data.dist_avd > 20 && 
-                        sensor_data.dist_d > 10) {
-                        snprintf(buffer, sizeof(buffer), "AVD: %.1fcm", sensor_data.dist_avd);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
-                    }
-                    lcd2_print(buffer);
-                }
-
-                // LCD2 - Ligne 4 (AR)
-                lcd2_set_cursor(3, 0);
-                if (is_valid_measurement(sensor_data.dist_ar)) {
-                    if (sensor_data.dist_ar > 10) {
-                        snprintf(buffer, sizeof(buffer), "AR: %.1fcm", sensor_data.dist_ar);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Att. AR !");
-                    }
-                    lcd2_print(buffer);
-                }
-
-                // Libérer le mutex I2C
-                xSemaphoreGive(i2c_mutex);
+                lcd2_print(buffer);
             }
-            // si des données importante sont à envoyer, elle le sont ici 
-            //on envoie en ESP NOW sur l'autre LCD. Attention ! Sera envoyé seulement quand en unicast
-            if(is_DATA2send == true){
-                //remise à false du flag 
-                is_DATA2send = false;
-                ESP_LOGI(TAG,"des données vont être envoyés");
-                if (xQueueSend(data_queue_2other_ESPNOW,&DataToEspNow,ESPNOW_MAXDELAY) != pdTRUE){
-                    ESP_LOGW(TAG, "Send send queue fail");
+            // compteur --;
+            // LCD1 - Ligne 1 (G)
+            lcd_set_cursor(0, 0);
+            if (is_valid_measurement(sensor_data.dist_g)) {
+                if (sensor_data.dist_g > 10) {
+                    snprintf(buffer, sizeof(buffer), "G: %.1fcm", sensor_data.dist_g);
+                } else {
+                    snprintf(buffer, sizeof(buffer), "Angle mort G !");
                 }
-                // remise à 0 de l'octet d'alerte
-                DataToEspNow = 0x00;
+                lcd_print(buffer);
             }
+
+            // LCD1 - Ligne 2 (D)
+            lcd_set_cursor(1, 0);
+            if (is_valid_measurement(sensor_data.dist_d)) {
+                if (sensor_data.dist_d > 10) {
+                    snprintf(buffer, sizeof(buffer), "D: %.1fcm", sensor_data.dist_d);
+                } else {
+                    snprintf(buffer, sizeof(buffer), "Angle mort D !");
+                }
+                lcd_print(buffer);
+            }
+
+            // LCD2 - Ligne 2 (AVG)
+            lcd2_set_cursor(1, 0);
+            if (is_valid_measurement(sensor_data.dist_av) && 
+                is_valid_measurement(sensor_data.dist_avg) && 
+                is_valid_measurement(sensor_data.dist_g)) {
+                if (sensor_data.dist_av > 5 && 
+                    sensor_data.dist_avg > 20 && 
+                    sensor_data.dist_g > 10) {
+                    snprintf(buffer, sizeof(buffer), "AVG: %.1fcm", sensor_data.dist_avg);
+                } else {
+                    snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
+                    //mise du flag d'envoie a 1. Est nettoyé lorsque la donnée est envoyé
+                    //is_DATA2send = true;
+                }
+                lcd2_print(buffer);
+            }
+
+            // LCD2 - Ligne 3 (AVD)
+            lcd2_set_cursor(2, 0);
+            if (is_valid_measurement(sensor_data.dist_av) && 
+                is_valid_measurement(sensor_data.dist_avd) && 
+                is_valid_measurement(sensor_data.dist_d)) {
+                if (sensor_data.dist_av > 5 && 
+                    sensor_data.dist_avd > 20 && 
+                    sensor_data.dist_d > 10) {
+                    snprintf(buffer, sizeof(buffer), "AVD: %.1fcm", sensor_data.dist_avd);
+                } else {
+                    snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
+                }
+                lcd2_print(buffer);
+            }
+
+            // LCD2 - Ligne 4 (AR)
+            lcd2_set_cursor(3, 0);
+            if (is_valid_measurement(sensor_data.dist_ar)) {
+                if (sensor_data.dist_ar > 10) {
+                    snprintf(buffer, sizeof(buffer), "AR: %.1fcm", sensor_data.dist_ar);
+                } else {
+                    snprintf(buffer, sizeof(buffer), "Att. AR !");
+                }
+                lcd2_print(buffer);
+            }
+
+            // Libérer le mutex I2C
+            xSemaphoreGive(i2c_mutex);
+        }
+        // si des données importante sont à envoyer, elle le sont ici 
+        //on envoie en ESP NOW sur l'autre LCD. Attention ! Sera envoyé seulement quand en unicast
+        if(is_DATA2send == true){
+            //remise à false du flag 
+            is_DATA2send = false;
+            ESP_LOGI(TAG,"des données vont être envoyés");
+            if (xQueueSend(data_queue_2other_ESPNOW,&DataToEspNow,ESPNOW_MAXDELAY) != pdTRUE){
+                ESP_LOGW(TAG, "Send send queue fail");
+            }
+            // remise à 0 de l'octet d'alerte
+            DataToEspNow = 0x00;
         }
     }
 }
