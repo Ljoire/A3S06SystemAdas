@@ -144,24 +144,30 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
     return -1;
 }
 
-/* Prepare ESPNOW data to be sent. */
-void example_espnow_data_prepare(example_espnow_send_param_t *send_param,u_int8_t *mes2send)
-{
-    example_espnow_data_t *buf = (example_espnow_data_t *)send_param->buffer;
+void    example_espnow_data_prepare(example_espnow_send_param_t *send_param, uint8_t *mes2send) {
+// Vérifier que le buffer est alloué et suffisant
+assert(send_param->buffer != NULL);
+assert(send_param->len >= sizeof(example_espnow_data_t));
 
-    assert(send_param->len >= sizeof(example_espnow_data_t));
+example_espnow_data_t *buf = (example_espnow_data_t *)send_param->buffer;
 
-    //testing the type of MAC adress inside. type take EXAMPLE_ESPNOW_DATA_BROADCAST if broadcast 
-    buf->type = IS_BROADCAST_ADDR(send_param->dest_mac) ? EXAMPLE_ESPNOW_DATA_BROADCAST : EXAMPLE_ESPNOW_DATA_UNICAST;
-    buf->state = send_param->state;
-    buf->seq_num = s_example_espnow_seq[buf->type]++;
-    buf->crc = 0;
-    buf->magic = send_param->magic;
-    
-    /* Copie du payload dans la structure */
-    ESP_LOGI(TAG, "the message to send is %s",mes2send);
-    memcpy(buf->payload, mes2send, sizeof(buf->payload));
-    buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
+// Type de message
+buf->type = IS_BROADCAST_ADDR(send_param->dest_mac) ? EXAMPLE_ESPNOW_DATA_BROADCAST : EXAMPLE_ESPNOW_DATA_UNICAST;
+buf->state = send_param->state;
+buf->seq_num = s_example_espnow_seq[buf->type]++;
+buf->crc = 0;
+buf->magic = send_param->magic;
+
+// Calcul et copie sécurisée du payload
+size_t messagelen = strnlen((char *)mes2send, MAX_PAYLOAD_SIZE);
+size_t copy_size = (messagelen < sizeof(buf->payload)) ? messagelen : sizeof(buf->payload);
+
+ESP_LOGI(TAG, "Copy size: %u", copy_size);
+memset(buf->payload, 0, sizeof(buf->payload)); // Initialisation pour éviter les données résiduelles
+memcpy(buf->payload, mes2send, copy_size);
+
+// Calcul du CRC après préparation des données
+buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 
 }
 
@@ -173,7 +179,9 @@ int espnow_datasending(example_espnow_send_param_t *send_param, uint8_t *message
 
     /* Copy the destination MAC address into the send parameter. */
     memcpy(send_param->dest_mac, desMAC, ESP_NOW_ETH_ALEN);
-    u_int8_t messageboundchecked[MAX_PAYLOAD_SIZE];
+    uint8_t messageboundchecked[MAX_PAYLOAD_SIZE];
+    memset(messageboundchecked,0,sizeof(messageboundchecked));
+
     memcpy(messageboundchecked,message,MAX_PAYLOAD_SIZE);
     ESP_LOGI(TAG, "Sending data to "MACSTR" the message is %s: ", MAC2STR(desMAC),messageboundchecked);
     /* Prepare the ESPNOW data using the provided message. */
@@ -242,7 +250,7 @@ static void example_espnow_task(void *pvParameter)
                 ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
                 if (!is_broadcast) 
                 {
-                    // if the data is in unicast no
+                    // if the data is in unicast
                     break;
                 }
 

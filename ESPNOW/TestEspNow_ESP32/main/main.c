@@ -96,8 +96,8 @@ static void sensor_task(void *pvParameters) {
 			if (sensor_data.dist_av <= 5) {
 				// Distance critique - envoyer le message d'alerte
 				if (last_state != 0) {
-					if(xQueuesend(data_queue_2other_ESPNOW,"Att. F. Urg !") !=pdTRUE){
-                        ESP_LOGI(TAG,"Error from the sending queue ")
+					if(xQueueSend(data_queue_2other_ESPNOW,"Att. F. Urg !",ESPNOW_MAXDELAY) !=pdTRUE){
+                        ESP_LOGI(TAG,"Error from the sending queue ");
                     }
 					last_state = 0;
 				}
@@ -235,7 +235,7 @@ static void display_task(void *pvParameters) {
 
 // Tâche de réception ESP-NOW modifiée
 static void espnow_display_task(void *pvParameter) {
-    espnow_message_t msg;
+    char msg[MAX_PAYLOAD_SIZE]; ;
     char buffer[33];  // Augmenté à 33 pour accueillir MAX_MESSAGE_LENGTH + null terminator
 
     while (1) {
@@ -249,7 +249,7 @@ static void espnow_display_task(void *pvParameter) {
                 
                 lcd_set_cursor(1, 0);
                 // Limiter la longueur du message à 16 caractères pour l'écran LCD
-                strncpy(buffer, msg.message, 16);
+                strncpy(buffer, msg, 16);
                 buffer[16] = '\0';  // Assurer la terminaison
                 lcd_print(buffer);
                 
@@ -326,20 +326,6 @@ void app_main(void) {
     );
     if (xReturned != pdPASS) {
         ESP_LOGE(TAG, "Échec de création de la tâche affichage");
-        return;
-    }
-
-    // Tâche de réception ESP-NOW
-    xReturned = xTaskCreate(
-        espnow_display_task,
-        "ESPNOW_DISPLAY",
-        ESPNOW_STACK_SIZE,
-        NULL,
-        ESPNOW_TASK_PRIORITY,
-        NULL
-    );
-    if (xReturned != pdPASS) {
-        ESP_LOGE(TAG, "Échec de création de la tâche ESP-NOW");
         return;
     }
 

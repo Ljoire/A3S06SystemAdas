@@ -201,7 +201,7 @@ typedef struct {
     uint16_t seq_num;                     /**< Numéro de séquence de la trame ESPNOW. */
     uint16_t crc;                         /**< Somme de contrôle CRC16 des données ESPNOW. */
     uint8_t magic;                        /**< Nombre magique pour sélectionner le dispositif en unicast. */
-    uint8_t payload[8];                   /**< Charge utile réelle des données ESPNOW. */
+    uint8_t payload[MAX_PAYLOAD_SIZE];                   /**< Charge utile réelle des données ESPNOW. */
 } __attribute__((packed)) example_espnow_data_t;
 
 
