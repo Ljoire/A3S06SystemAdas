@@ -96,13 +96,15 @@ static void sensor_task(void *pvParameters) {
 			if (sensor_data.dist_av <= 5) {
 				// Distance critique - envoyer le message d'alerte
 				if (last_state != 0) {
-					espnow_send_message(receiver_mac, "Att. F. Urg !");
+					if(xQueuesend(data_queue_2other_ESPNOW,"Att. F. Urg !") !=pdTRUE){
+                        ESP_LOGI(TAG,"Error from the sending queue ")
+                    }
 					last_state = 0;
 				}
 			} else {
 				// Distance > 5cm - envoyer un message vide pour effacer son LCD
 				if (last_state != 1) {
-					espnow_send_message(receiver_mac, "");  // Message vide
+					//espnow_send_message(receiver_mac, "");  // Message vide
 					last_state = 1;
 				}
 			}
@@ -237,7 +239,7 @@ static void espnow_display_task(void *pvParameter) {
     char buffer[33];  // Augmenté à 33 pour accueillir MAX_MESSAGE_LENGTH + null terminator
 
     while (1) {
-        if (xQueueReceive(espnow_receive_queue, &msg, portMAX_DELAY) == pdTRUE) {
+        if (xQueueReceive(receive_calback_queue, &msg, portMAX_DELAY) == pdTRUE) {
             if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
                 // Afficher le message reçu sur l'écran LCD
                 lcd_clear();
@@ -258,7 +260,7 @@ static void espnow_display_task(void *pvParameter) {
 }
 
 void app_main(void) {
-    
+
     ESP_LOGI(TAG, "Démarrage du système...");
 
     ESP_LOGI(TAG, "Starting vehicle sensor system...");

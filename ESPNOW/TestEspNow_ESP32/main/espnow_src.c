@@ -15,7 +15,7 @@
    Prepare two device, one for sending ESPNOW data and another for receiving
    ESPNOW data.
 */
-#include "espnow_example.h"
+#include "espnow_handler.h"
 /*********************** CUSTOM DEFINE*/
 
 #define FRAMELEN 18
@@ -332,7 +332,7 @@ void espnow_sending_task(void *pvParameter) {
     uint8_t sensor_data[MAX_PAYLOAD_SIZE];
 
 
-    data_queue_2other_ESPNOW = xQueueCreate(SENSOR_SEND_QUEUE_SIZE, sizeof(uint8_t[MAX_PAYLOAD_SIZE]));
+    data_queue_2other_ESPNOW = xQueueCreate(SENSOR_SEND_QUEUE_SIZE, sizeof(char[MAX_PAYLOAD_SIZE]));
     if (data_queue_2other_ESPNOW == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor data queue");
         return;
@@ -360,7 +360,7 @@ esp_err_t example_espnow_init(void *pvParameter)
         return ESP_FAIL;
     }
 
-    receive_calback_queue = xQueueCreate(ESPNOW_QUEUE_SIZE,sizeof(char*));
+    receive_calback_queue = xQueueCreate(ESPNOW_QUEUE_SIZE,sizeof(char [MAX_PAYLOAD_SIZE]));
     if (s_example_espnow_queue == NULL) {
         ESP_LOGE(TAG, "Callback queue fail");
         return ESP_FAIL;
