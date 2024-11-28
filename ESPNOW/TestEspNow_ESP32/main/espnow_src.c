@@ -21,7 +21,7 @@
 #define FRAMELEN 18
 #define CUSTOM_SEND_COUNT 1
 #define FRAMECOUNTER 5
-
+#define CONFIG_ESPNOW_SEND_DELAY 1000
 
 static const char *TAG = "espnow_example";
 
