@@ -1,3 +1,16 @@
+/**
+ * @file main.c
+ * @author JOIRE Léon leon.joire@esme.fr
+ * @author ANDRIANJAFINDRADILO Sitraka Marc andrianjafindradilo-sitraka.marc@esme.fr
+ * @author RAFFOUX Pol-Eloi pol-eloi.raffoux@esme.fr
+ * @brief Main file of our end of study project about a V2V communication system
+ * @version 0.1
+ * @date 2024-11-24
+ * 
+ * @copyright
+ * 
+ */
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <esp_system.h>
