@@ -30,7 +30,6 @@
 #include "espnow_handler.h"
 
 // MAC Address du récepteur (à modifier selon l'adresse de la carte de ton collègue)
-static uint8_t receiver_mac[] = {0xE0, 0x5A, 0x1B, 0x75, 0x65, 0x84};  // À vérifier ! Ou à remplacer par l'adresse MAC
 
 #define SENSOR_TASK_PRIORITY    (tskIDLE_PRIORITY + 3)
 #define DISPLAY_TASK_PRIORITY   (tskIDLE_PRIORITY + 2)
@@ -259,15 +258,28 @@ static void espnow_display_task(void *pvParameter) {
 }
 
 void app_main(void) {
+    
     ESP_LOGI(TAG, "Démarrage du système...");
 
-    // Initialisation de la NVS flash
+    ESP_LOGI(TAG, "Starting vehicle sensor system...");
     esp_err_t ret = nvs_flash_init();
+
+    //accession a sensor_data
+
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
+        ESP_ERROR_CHECK( nvs_flash_erase() );
     }
-    ESP_ERROR_CHECK(ret);
+    ESP_ERROR_CHECK( ret );
+    
+
+    example_wifi_init();
+    printf("wifi initialized");
+    example_espnow_send_param_t *send_param = SendingParamCreator();
+    
+    if(example_espnow_init(send_param) != ESP_OK){
+        ESP_LOGE(TAG,"error during the initialization of espnow");        
+    }
+    printf("ESP now init");
 
     // Création de la file d'attente pour les données des capteurs
     sensor_queue = xQueueCreate(2, sizeof(sensor_data_t));
@@ -283,9 +295,6 @@ void app_main(void) {
         return;
     }
 
-    // Initialisation ESP-NOW
-    ESP_ERROR_CHECK(espnow_init(1)); // Canal WiFi 1
-    ESP_ERROR_CHECK(espnow_add_peer(receiver_mac));
 
     // Création des tâches
     BaseType_t xReturned;
