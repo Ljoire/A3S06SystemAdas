@@ -240,10 +240,12 @@ static void espnow_display_task(void *pvParameter) {
 
     while (1) {
         if (xQueueReceive(receive_calback_queue, &msg, portMAX_DELAY) == pdTRUE) {
+            ESP_LOGI(TAG,"Information passed on the task");
             if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
                 // Afficher le message reçu sur l'écran LCD
                 lcd_clear();
                 lcd_set_cursor(0, 0);
+                ESP_LOGI(TAG,"Information passed inside the mutex");
                 strncpy(buffer, "Message recu:", sizeof(buffer) - 1);
                 lcd_print(buffer);
                 
@@ -328,6 +330,21 @@ void app_main(void) {
         ESP_LOGE(TAG, "Échec de création de la tâche affichage");
         return;
     }
+
+        // Tâche d'affichage
+    xReturned = xTaskCreate(
+        espnow_display_task,
+        "DISPLAY",
+        DISPLAY_STACK_SIZE,
+        NULL,
+        6,
+        NULL
+    );
+    if (xReturned != pdPASS) {
+        ESP_LOGE(TAG, "Échec de création de la tâche affichage");
+        return;
+    }
+
 
     ESP_LOGI(TAG, "Toutes les tâches ont été créées avec succès");
 }
