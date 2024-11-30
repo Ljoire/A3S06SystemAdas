@@ -39,6 +39,8 @@
 #define DISPLAY_STACK_SIZE      (configMINIMAL_STACK_SIZE * 2)
 #define ESPNOW_STACK_SIZE      (configMINIMAL_STACK_SIZE * 3)
 
+#define LOCK_ESP_ONESEC 125000000
+
 static const char *TAG = "MAIN";
 static SemaphoreHandle_t i2c_mutex;
 
@@ -136,7 +138,11 @@ static void sensor_task(void *pvParameters) {
 static void display_task(void *pvParameters) {
     sensor_data_t sensor_data;
     char buffer[21];
+    char msg[MAX_PAYLOAD_SIZE]; 
 
+    //flag for alert displaying
+    bool isLocked = false;
+    uint32_t DistantCounter= 0;
     if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
         lcd_init();
         lcd2_init();
@@ -146,23 +152,34 @@ static void display_task(void *pvParameters) {
     }
 
     while (1) {
-        if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS) {
+        if (xQueueReceive(receive_calback_queue, &msg, portMAX_DELAY) == pdTRUE) {
+            ESP_LOGI(TAG,"Information passed on the task");
+            if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
+                // Afficher le message reçu sur l'écran LCD
+                lcd_clear();
+                lcd_set_cursor(0, 0);
+                ESP_LOGI(TAG,"Information passed inside the mutex");
+                strncpy(buffer, msg, MAX_PAYLOAD_SIZE);
+                lcd_print(buffer);
+            
+                isLocked = true;
+
+                lcd_set_cursor(1, 0);
+                // Limiter la longueur du message à 16 caractères pour l'écran LCD
+                strncpy(buffer, msg, 16);
+                buffer[16] = '\0';  // Assurer la terminaison
+                lcd_print(buffer);
+                
+                xSemaphoreGive(i2c_mutex);
+            }
+        }
+        //if we received an distant alert, wait for the display count finish 
+        if (xQueueReceive(sensor_queue, &sensor_data, pdMS_TO_TICKS(500)) == pdPASS && isLocked == false) {
             if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
                 // Effacement des écrans
                 lcd_clear();
                 lcd2_clear();
                 vTaskDelay(pdMS_TO_TICKS(10));
-
-                // LCD2 - Ligne 1 (AV)
-                lcd2_set_cursor(0, 0);
-                if (is_valid_measurement(sensor_data.dist_av)) {
-                    if (sensor_data.dist_av > 5) {
-                        snprintf(buffer, sizeof(buffer), "AV: %.1fcm", sensor_data.dist_av);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Att. F. Urgence !");
-                    }
-                    lcd2_print(buffer);
-                }
 
                 // LCD1 - Ligne 1 (G)
                 lcd_set_cursor(0, 0);
@@ -186,78 +203,17 @@ static void display_task(void *pvParameters) {
                     lcd_print(buffer);
                 }
 
-                // LCD2 - Ligne 2 (AVG)
-                lcd2_set_cursor(1, 0);
-                if (is_valid_measurement(sensor_data.dist_av) && 
-                    is_valid_measurement(sensor_data.dist_avg) && 
-                    is_valid_measurement(sensor_data.dist_g)) {
-                    if (sensor_data.dist_av > 5 && 
-                        sensor_data.dist_avg > 20 && 
-                        sensor_data.dist_g > 10) {
-                        snprintf(buffer, sizeof(buffer), "AVG: %.1fcm", sensor_data.dist_avg);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
-                    }
-                    lcd2_print(buffer);
-                }
-
-                // LCD2 - Ligne 3 (AVD)
-                lcd2_set_cursor(2, 0);
-                if (is_valid_measurement(sensor_data.dist_av) && 
-                    is_valid_measurement(sensor_data.dist_avd) && 
-                    is_valid_measurement(sensor_data.dist_d)) {
-                    if (sensor_data.dist_av > 5 && 
-                        sensor_data.dist_avd > 20 && 
-                        sensor_data.dist_d > 10) {
-                        snprintf(buffer, sizeof(buffer), "AVD: %.1fcm", sensor_data.dist_avd);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Dep. Non Aut. !");
-                    }
-                    lcd2_print(buffer);
-                }
-
-                // LCD2 - Ligne 4 (AR)
-                lcd2_set_cursor(3, 0);
-                if (is_valid_measurement(sensor_data.dist_ar)) {
-                    if (sensor_data.dist_ar > 10) {
-                        snprintf(buffer, sizeof(buffer), "AR: %.1fcm", sensor_data.dist_ar);
-                    } else {
-                        snprintf(buffer, sizeof(buffer), "Att. AR !");
-                    }
-                    lcd2_print(buffer);
-                }
-
                 xSemaphoreGive(i2c_mutex);
             }
         }
-    }
-}
-
-// Tâche de réception ESP-NOW modifiée
-static void espnow_display_task(void *pvParameter) {
-    char msg[MAX_PAYLOAD_SIZE]; ;
-    char buffer[33];  // Augmenté à 33 pour accueillir MAX_MESSAGE_LENGTH + null terminator
-
-    while (1) {
-        if (xQueueReceive(receive_calback_queue, &msg, portMAX_DELAY) == pdTRUE) {
-            ESP_LOGI(TAG,"Information passed on the task");
-            if (xSemaphoreTake(i2c_mutex, portMAX_DELAY) == pdTRUE) {
-                // Afficher le message reçu sur l'écran LCD
-                lcd_clear();
-                lcd_set_cursor(0, 0);
-                ESP_LOGI(TAG,"Information passed inside the mutex");
-                strncpy(buffer, "Message recu:", sizeof(buffer) - 1);
-                lcd_print(buffer);
-                
-                lcd_set_cursor(1, 0);
-                // Limiter la longueur du message à 16 caractères pour l'écran LCD
-                strncpy(buffer, msg, 16);
-                buffer[16] = '\0';  // Assurer la terminaison
-                lcd_print(buffer);
-                
-                xSemaphoreGive(i2c_mutex);
+            //lock the display 1 seconds whitout block the programms
+            if (isLocked == true){
+                DistantCounter ++;
             }
-        }
+            if (DistantCounter == LOCK_ESP_ONESEC){
+                DistantCounter = 0;
+                isLocked = false;
+            }
     }
 }
 
@@ -324,20 +280,6 @@ void app_main(void) {
         DISPLAY_STACK_SIZE,
         NULL,
         DISPLAY_TASK_PRIORITY,
-        NULL
-    );
-    if (xReturned != pdPASS) {
-        ESP_LOGE(TAG, "Échec de création de la tâche affichage");
-        return;
-    }
-
-        // Tâche d'affichage
-    xReturned = xTaskCreate(
-        espnow_display_task,
-        "DISPLAY",
-        DISPLAY_STACK_SIZE,
-        NULL,
-        6,
         NULL
     );
     if (xReturned != pdPASS) {

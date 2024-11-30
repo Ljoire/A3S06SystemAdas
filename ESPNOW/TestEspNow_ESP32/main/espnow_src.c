@@ -37,6 +37,7 @@ void example_espnow_deinit(example_espnow_send_param_t *send_param);
 /* WiFi should start before using ESPNOW */
 void example_wifi_init(void)
 {
+    //checking all the error who can happens during the wifi initilisation
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -64,7 +65,7 @@ static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_
     }
 
     evt.id = EXAMPLE_ESPNOW_SEND_CB;
-
+    //Set the type of ID as a send cb the type of sending is determined on the espnow task 
     memcpy(send_cb->mac_addr, mac_addr, ESP_NOW_ETH_ALEN);
     send_cb->status = status;
     if (xQueueSend(s_example_espnow_queue, &evt, ESPNOW_MAXDELAY) != pdTRUE) {
@@ -78,6 +79,7 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
 {
     example_espnow_event_t evt;
     example_espnow_event_recv_cb_t *recv_cb = &evt.info.recv_cb;
+
     uint8_t * mac_addr = recv_info->src_addr;
     uint8_t * des_addr = recv_info->des_addr;
 
@@ -270,10 +272,10 @@ static void example_espnow_task(void *pvParameter)
                     ESP_LOGI(TAG, "Receive %dth broadcast data from: "MACSTR", len: %d", recv_seq, MAC2STR(recv_cb->mac_addr), recv_cb->data_len);
                     
                     //stack overflow
-                    /*if(recv_seq >= MAX_PAYLOAD_SIZE){
-                        send_param->broadcast = false;
-                        espnow_datasending(send_param,(uint8_t*)"BRODATA",s_example_broadcast_mac[ESP_NOW_ETH_ALEN]);
-                    }*/
+                    if(recv_seq >= MAX_PAYLOAD_SIZE){
+                        recv_seq = 0;
+                        espnow_datasending(send_param,(uint8_t*)"BRODATA",s_example_broadcast_mac);
+                    }
 
                     if (esp_now_is_peer_exist(recv_cb->mac_addr) == false) {
                         esp_now_peer_info_t *peer = malloc(sizeof(esp_now_peer_info_t));
@@ -376,6 +378,8 @@ esp_err_t example_espnow_init(void *pvParameter)
 
     /* Initialize ESPNOW and register sending and receiving callback function. */
     ESP_ERROR_CHECK( esp_now_init() );
+
+    //set the cb function via the ESP command esp_now_register
     ESP_ERROR_CHECK( esp_now_register_send_cb(example_espnow_send_cb) );
     ESP_ERROR_CHECK( esp_now_register_recv_cb(example_espnow_recv_cb) );
 #if CONFIG_ESPNOW_ENABLE_POWER_SAVE
@@ -430,7 +434,7 @@ example_espnow_send_param_t *SendingParamCreator(void){
     send_param->len = FRAMELEN;//CONFIG_ESPNOW_SEND_LEN; modif a 18
     send_param->pingpong = true;
     send_param->buffer = malloc(FRAMELEN);
-// Will be commented
+
     if (send_param->buffer == NULL) {
         ESP_LOGE(TAG, "Malloc send buffer fail");
         free(send_param);
