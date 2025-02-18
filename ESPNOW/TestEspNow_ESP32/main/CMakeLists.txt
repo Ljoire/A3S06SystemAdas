@@ -1,4 +1,4 @@
-idf_component_register(SRCS "main.c"
+idf_component_register(SRCS "calculateur.c" "main.c"
                            "hc_sr04.c"
                            "i2c_lcd.c"
                            "i2c_lcd2.c"
