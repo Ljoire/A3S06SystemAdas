@@ -25,7 +25,7 @@
  #include "esp_timer.h"
  #include "nvs_flash.h"
  
- #include "hc_sr04.h"
+ #include "anglemort.h"
  #include "i2c_lcd.h"
  #include "i2c_lcd2.h"
  #include "espnow_handler.h"
@@ -87,7 +87,7 @@ void app_main(void) {
         display_task,
         "DISPLAY",
         DISPLAY_STACK_SIZE,
-        NULL,
+        NULL,                                                                               
         DISPLAY_TASK_PRIORITY,
         NULL
     );
