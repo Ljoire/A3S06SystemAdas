@@ -57,17 +57,17 @@ uint8_t detect_alert() {
         distances[i] = measure_distance_cm(&capteurs[i]);
     }
 
-    if (distances[0] < ALERT_DISTANCE) return 1; // Angle mort gauche
-    if (distances[1] < ALERT_DISTANCE) return 2; // Angle mort droit
+    uint16_t alert_flags = 0;
 
-    if (distances[0] < ALERT_DISTANCE || distances[3] < ALERT_DISTANCE) return 3; // Obstacle arrière gauche ou avant gauche
-    if (distances[1] < ALERT_DISTANCE || distances[4] < ALERT_DISTANCE) return 4; // Obstacle arrière droit ou avant droit
+    if (distances[0] < ALERT_DISTANCE) alert_flags |= (1 << 0);
+    if (distances[1] < ALERT_DISTANCE) alert_flags |= (1 << 1);
+    if (distances[0] < ALERT_DISTANCE || distances[3] < ALERT_DISTANCE) alert_flags |= (1 << 2);
+    if (distances[1] < ALERT_DISTANCE || distances[4] < ALERT_DISTANCE) alert_flags |= (1 << 3);
+    if (distances[2] < 60) alert_flags |= (1 << 4);
+    if (distances[2] < 40) alert_flags |= (1 << 5);
+    if (distances[2] < 20) alert_flags |= (1 << 6);
+    if (distances[2] != -1 && distances[4] == -1 && distances[1] == -1) alert_flags |= (1 << 7);
+    if (distances[2] != -1 && distances[3] == -1 && distances[0] == -1) alert_flags |= (1 << 8);
 
-    if (distances[2] < 60) return 6; // Distance inférieure à 60 cm
-    if (distances[2] < 40) return 7; // Distance inférieure à 40 cm
-    if (distances[2] < 20) return 8; // Distance inférieure à 20 cm
-
-    if (distances[2] != -1 && distances[4] == -1 && distances[1] == -1) return 9; // Dépassement à droite 
-    if (distances[2] != -1 && distances[3] == -1 && distances[0] == -1) return 10;  // Dépassement à gauche
-    return 0;
+    return alert_flags;
 }

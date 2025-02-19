@@ -10,7 +10,7 @@
  * @copyright
  * 
  */
-
+/*
 #include <stdio.h>
 #include <stdbool.h>
 #include <esp_system.h>
@@ -289,4 +289,4 @@ void app_main(void) {
 
 
     ESP_LOGI(TAG, "Toutes les tâches ont été créées avec succès");
-}
+}*/
