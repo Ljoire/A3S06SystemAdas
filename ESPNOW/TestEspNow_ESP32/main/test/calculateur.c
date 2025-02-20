@@ -1,6 +1,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /**
  * @brief Liste des alertes
@@ -20,17 +23,29 @@
 #define ROAD_LIGHT_LOC 11
 #define ROAD_LIGHT_DIST 12
 
-extern QueueHandle_t queueLCD_rx;
-extern QueueHandle_t queueLCD_tx;
+/**
+ * @brief Initialisation de tout les tâches et Queue 
+ * 
+ * @return esp_err_t 
+ */
+#define CALCULATOR_QUEUE_LENGHT 15
+#define ALERT_DATA_FORMAT sizeof(uint16_t)
+#define CALCULATOR_STACK_SIZE 2
+extern QueueHandle_t queueCapteur_rx;
 extern QueueHandle_t queueMoteur_rx;
-extern QueueHandle_t queueMoteur_tx;
 extern QueueHandle_t queueESPNOW_rx;
+
+// Queue par lesquelles le calculateur transmet les code erreur
+extern QueueHandle_t queueLCD_tx;
+extern QueueHandle_t queueMoteur_tx;
 extern QueueHandle_t queueESPNOW_tx;
+
+
 
 void task_calculateur(void *pvParameters) {
     //Variable d'accueil local
-    uint8_t espnow_data, moteur_data, capteur_data;
-    uint8_t moteur_received, capteur_received;
+    uint16_t espnow_data, moteur_data, capteur_data;
+    uint16_t moteur_received, capteur_received;
 
     while (1) {
         /**
@@ -51,7 +66,7 @@ void task_calculateur(void *pvParameters) {
         // Reprendre car un cas d'erreur est qu'il peut ne rien avoir car ça a été dépilé avant
         
         moteur_data = xQueueReceive(queueMoteur_rx, &moteur_received, portMAX_DELAY);
-        capteur_data = xQueueReceive(queueLCD_rx, &capteur_received, portMAX_DELAY);
+        capteur_data = xQueueReceive(queueCapteur_rx, &capteur_received, portMAX_DELAY);
         /**
          * @brief Le capteur détecte un DNPW alors que le moteur est en train de tourner 
          * TODO implémenter le cas distant avec un envoie en ESPNOW

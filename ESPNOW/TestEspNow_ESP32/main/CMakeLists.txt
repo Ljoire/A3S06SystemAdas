@@ -4,7 +4,8 @@ set(USE_TEST_CODE ON)  # Mets à OFF pour compiler le programme principal
 # Déclaration des fichiers sources et des dossiers d'inclusion
 if(USE_TEST_CODE)
     set(SRCS "test/anglemort.c" 
-             "test/main.c")
+             "test/main.c"
+             "test/calculateur.c")
     set(INCLUDE_DIRS "." "include" "test")
 else()
     set(SRCS "calculateur.c" 

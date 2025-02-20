@@ -27,3 +27,5 @@ float measure_distance_cm(hc_sr04_t *sensor);
 uint8_t detect_alert();
 
 #endif // HC_SR04_H
+
+void sensor_task(void *pvParameters);

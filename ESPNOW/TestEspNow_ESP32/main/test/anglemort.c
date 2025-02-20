@@ -1,4 +1,5 @@
 #include "anglemort.h"
+#include "calculateur.h"
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <rom/ets_sys.h>
@@ -70,4 +71,44 @@ uint8_t detect_alert() {
     if (distances[2] != -1 && distances[3] == -1 && distances[0] == -1) alert_flags |= (1 << 8);
 
     return alert_flags;
+}
+extern void sensor_task(void *pvParameters) {
+    while (1) {
+        uint8_t alerts = detect_alert();
+
+        if (alerts & (1 << 0)) {
+            ESP_LOGI(TAG, "⚠️ Angle mort gauche !");
+        }
+        if (alerts & (1 << 1)) {
+            ESP_LOGI(TAG, "⚠️ Angle mort droit !");
+        }
+        if (alerts & (1 << 2)){
+            ESP_LOGI(TAG, "⚠️ Obstacle arrière gauche ou avant gauche !");
+  
+        }         
+        if (alerts & (1 << 3)){
+            ESP_LOGI(TAG, "⚠️ Obstacle arrière droit ou avant droit !");  
+        } 
+        if (alerts & (1 << 4)){
+            ESP_LOGI(TAG, "⚠️ Distance < 60 cm !");
+        } 
+        if (alerts & (1 << 5)){
+            ESP_LOGI(TAG, "⚠️ Distance < 40 cm !");
+        } 
+        if (alerts & (1 << 6)) {
+            ESP_LOGI(TAG, "⚠️ Distance < 20 cm !");
+        }
+        if (alerts & (1 << 7)){
+            ESP_LOGI(TAG, "🚗 Dépassement à droite !");
+        }
+        if (alerts & (1 << 8)){
+            ESP_LOGI(TAG, "🚗 Dépassement à gauche !");
+        } 
+
+        if (alerts == 0){
+            ESP_LOGI(TAG, "Aucun danger détecté.");
+        } 
+        
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
 }

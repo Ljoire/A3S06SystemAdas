@@ -1,4 +1,6 @@
 #include "anglemort.h"
+#include "calculateur.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,31 +16,64 @@
 
 #define ALERT_DISTANCE 20  // Distance seuil pour déclencher une alerte
 
-static const char *TAG = "SENSOR";
+static const char *TAG = "MAIN";
 
-void sensor_task(void *pvParameters) {
-    while (1) {
-        uint8_t alerts = detect_alert();
 
-        if (alerts & (1 << 0)) ESP_LOGI(TAG, "⚠️ Angle mort gauche !");
-        if (alerts & (1 << 1)) ESP_LOGI(TAG, "⚠️ Angle mort droit !");
-        if (alerts & (1 << 2)) ESP_LOGI(TAG, "⚠️ Obstacle arrière gauche ou avant gauche !");
-        if (alerts & (1 << 3)) ESP_LOGI(TAG, "⚠️ Obstacle arrière droit ou avant droit !");
-        if (alerts & (1 << 4)) ESP_LOGI(TAG, "⚠️ Distance < 60 cm !");
-        if (alerts & (1 << 5)) ESP_LOGI(TAG, "⚠️ Distance < 40 cm !");
-        if (alerts & (1 << 6)) ESP_LOGI(TAG, "⚠️ Distance < 20 cm !");
-        if (alerts & (1 << 7)) ESP_LOGI(TAG, "🚗 Dépassement à droite !");
-        if (alerts & (1 << 8)) ESP_LOGI(TAG, "🚗 Dépassement à gauche !");
+/**
+ * @brief initialisation des queues d'I/O et de la tache du calculateur
+ * 
+ * @return ESP_OK la configuration c'est bien déroulé
+ * ESP_NOK une erreur a été rencontré
+ */
+esp_err_t CalculatorTaskQueueInitiator(void){
+    // Queue réceptrice vu du calculateur
+    queueCapteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
+    queueMoteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
+    queueESPNOW_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
+    
+    queueLCD_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
+    queueMoteur_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
+    queueESPNOW_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
 
-        if (alerts == 0) ESP_LOGI(TAG, "Aucun danger détecté.");
-        
-        vTaskDelay(pdMS_TO_TICKS(5000));
+    xTaskCreate(task_calculateur,"task_calculator",CALCULATOR_STACK_SIZE,NULL,1,NULL);
+    xTaskCreate(sensor_task, "Sensor Task", 1024, NULL, 2, NULL);
+    // Vérification des queues
+    if (!queueCapteur_rx || !queueMoteur_rx || !queueESPNOW_rx ||
+        !queueLCD_tx || !queueMoteur_tx || !queueESPNOW_tx) {
+        ESP_LOGE(TAG,"Erreur à la création des Queue");
+        return ESP_FAIL;
     }
+
+    // Création des tâches
+    if (xTaskCreate(task_calculateur, "task_calculator", CALCULATOR_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
+        ESP_LOGE(TAG,"Erreur à la création de la taches calculator");
+        return ESP_FAIL;
+    }
+
+    if (xTaskCreate(sensor_task, "Sensor Task", 1024, NULL, 2, NULL) != pdPASS) {
+        ESP_LOGE(TAG,"Erreur à la création de la taches de capteur");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG,"Création réussi");
+    return ESP_OK;
+    
 }
 
 void app_main() {
+
     ESP_LOGI(TAG, "Système de détection d'angle mort initialisé.");
-    xTaskCreate(sensor_task, "Sensor Task", 4096, NULL, 5, NULL);
+
+    esp_err_t ret = CalculatorTaskQueueInitiator();
+    // Vérification du retour d'erreur
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "Initialisation des tâches et des queues réussie.");
+    } else {
+        ESP_LOGE(TAG, "Échec de l'initialisation des tâches et des queues ! Code d'erreur : %d", err);
+        // Ici, tu peux décider de redémarrer l'ESP32 en cas d'échec
+        // esp_restart();
+    }
+    
 }
 
 
