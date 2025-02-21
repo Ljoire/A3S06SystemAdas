@@ -1,54 +1,100 @@
+/**
+ * @file calculateur.c
+ * @author Léon Joire (leon.joire@esme.fr)
+ * @brief Calculateur du système ADAS en V2V.
+ * Récupère les entrées capteurs et ESPNOW puis transmet aux sortie
+ * Priorise les alertes 
+ * Recode correctement ce qu'il faut envoyer aux tâches 
+ * @version 0.1 
+ * @date 2025-02-21
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
 #include "calculateur.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/** @brief Liste des entrées */
-#define SENSOR_FRAME_LENGH 7
+
+
+static const char *TAG = "CALCULATEUR";
+    /***** @brief Liste des entrée ****/
+    /** @brief ESPNOW **/
+#define ESPNOW_EEBL_CRIT 6
+#define ESPNOW_DNPW_G 12
+#define ESPNOW_DNPW_D 14
+#define ESPNOW_FCW_CRIT 19
+//Trame du capteur [Code Alerte, Distance1, Distance2,Distance3,Distance4,Distance5,Distance6]
+#define SENSOR_FRAME_LENGH 6 
+//en comptant le 0
+
+    /***** @brief Liste des sortie ****/
+    /** @brief Sortie Moteur **/
+#define MOTEUR_AVANT_LENT 2
+#define MOTEUR_STOP 3
+#define SERVO_CENTRE 4
+    /** @brief buzzer*/
+#define SONNERIE_STOP 0
+#define SONNERIE_LOW 1
+#define SONNERIE_INTERMEDIAIRE 2
+#define SONNERIE_FORT 3
+/** @brief LCD */
 
 
 /**
- * @brief Liste des alertes capteur
- *  
- */
-#define BSW_G 1
-#define BSW_D 2
-#define DNPW_G 3
-#define DNPW_D 4
-#define EEBL 5
-#define FCW_LOW 6
-#define FCW_ADV 7
-#define FCW_CRT 8
-#define DEPACEMENT_G 9
-#define DEPACEMENT_D 10
-// A implementer
-#define ROAD_LIGHT_LOC 11
-#define ROAD_LIGHT_DIST 12
-
-/**
- * @brief Initialisation de tout les tâches et Queue 
+ * @brief initialisation des queues d'I/O et de la tache du calculateur
  * 
- * @return esp_err_t 
+ * @return ESP_OK la configuration c'est bien déroulé ESP_NOK une erreur a été rencontré
+ * @brief Initialisation de tout les tâches et Queue 
+ * @brief liste des queue d'entrées sorties 
  */
-#define CALCULATOR_QUEUE_LENGHT 15
-#define ALERT_DATA_FORMAT sizeof(uint16_t)
-#define CALCULATOR_STACK_SIZE 2
+//Queue par lequel le calculateur reçoit des codes erreur 
 extern QueueHandle_t queueCapteur_rx;
 extern QueueHandle_t queueMoteur_rx;
 extern QueueHandle_t queueESPNOW_rx;
-
 // Queue par lesquelles le calculateur transmet les code erreur
 extern QueueHandle_t queueLCD_tx;
 extern QueueHandle_t queueMoteur_tx;
 extern QueueHandle_t queueESPNOW_tx;
+#define CALCULATOR_QUEUE_LENGHT 15
+#define ALERT_DATA_FORMAT uint8_t
+#define CALCULATOR_STACK_SIZE 2
+esp_err_t CalculatorTaskQueueInitiator(void){
+    
+    queueCapteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    queueMoteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    queueESPNOW_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+
+    queueLCD_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    queueMoteur_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    queueESPNOW_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+
+    xTaskCreate(task_calculateur,"task_calculator",CALCULATOR_STACK_SIZE,NULL,1,NULL);
+
+    // Création des tâches
+    if (xTaskCreate(task_calculateur, "task_calculator", CALCULATOR_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
+        ESP_LOGE(TAG,"Erreur à la création de la taches calculator");
+        return ESP_FAIL;
+    }
+    //ESP_LOGI(TAG,"Création des taches du calculateur réussi");
+    return ESP_OK;
+    
+}
 
 
+/********** FONCTION D ALERTE  DE L ESP***********/
+
+void EspNowEEBL(ALERT_DATA_FORMAT data[SENSOR_FRAME_LENGH], ALERT_DATA_FORMAT alert){
+    //pas de données de distance on rempli le buffer de données quand même pour le LCD
+    
+    
+}
 
 void task_calculateur(void *pvParameters) {
     //Variable d'accueil local
-    uint16_t espnow_data, moteur_data, capteur_data;
-    uint16_t moteur_received, capteur_received;
-
+    ALERT_DATA_FORMAT espnow_data, moteur_data, capteur_data[SENSOR_FRAME_LENGH];
+    ALERT_DATA_FORMAT moteur_received, capteur_received;
     while (1) {
         /**
          * @brief Réception d'un EEBL du véhicule distant on envoie l'info au LCD
@@ -56,17 +102,43 @@ void task_calculateur(void *pvParameters) {
          * 
          */
         if (xQueueReceive(queueESPNOW_rx, &espnow_data, portMAX_DELAY) == pdTRUE) {
-            if (espnow_data == EEBL) {
-                xQueueSend(queueLCD_tx, &espnow_data, portMAX_DELAY);
+            ALERT_DATA_FORMAT DatatMoteur;
+        
+            switch (espnow_data) {
+                case ESPNOW_EEBL_CRIT:
+                    // Mettre la PWM à 100% pour l'alerte 6
+                    vTaskDelay(pdMS_TO_TICKS(300));
+                    break;
+        
+                case ESPNOW_DNPW_G:
+                case ESPNOW_DNPW_D:
+                    DatatMoteur = SERVO_CENTRE;
+                    if (xQueueSend(queueMoteur_tx, &DatatMoteur, portMAX_DELAY) == pdTRUE) {
+                        vTaskDelay(pdMS_TO_TICKS(300));
+                    }
+                    break;
+        
+                case ESPNOW_FCW_CRIT:
+                    DatatMoteur = MOTEUR_AVANT_LENT;
+                    if (xQueueSend(queueMoteur_tx, &DatatMoteur, portMAX_DELAY) == pdTRUE) {
+                        vTaskDelay(pdMS_TO_TICKS(300));
+                    }
+                    break;
+        
+                default:
+                    break;
+            }
+        
+            // Effectuer un ET logique avec 0xC0 pour extraire les 2 bits de poids fort
+            int lcd_alert = espnow_data & 0xC0;
+            if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
                 vTaskDelay(pdMS_TO_TICKS(300));
-                continue;
-                
             }
         }
-
+        
+        }
         // Dépiler moteur et capteur séparément
         // Reprendre car un cas d'erreur est qu'il peut ne rien avoir car ça a été dépilé avant
-        
         moteur_data = xQueueReceive(queueMoteur_rx, &moteur_received, portMAX_DELAY);
         capteur_data = xQueueReceive(queueCapteur_rx, &capteur_received, portMAX_DELAY);
         /**
