@@ -84,11 +84,47 @@ esp_err_t CalculatorTaskQueueInitiator(void){
 
 
 /********** FONCTION D ALERTE  DE L ESP***********/
+bool ProcessEspNowData(void) {
+    ALERT_DATA_FORMAT espnow_data;
+    
+    if (xQueueReceive(queueESPNOW_rx, &espnow_data, portMAX_DELAY) == pdTRUE) {
+        ALERT_DATA_FORMAT DatatMoteur;
 
-void EspNowEEBL(ALERT_DATA_FORMAT data[SENSOR_FRAME_LENGH], ALERT_DATA_FORMAT alert){
-    //pas de données de distance on rempli le buffer de données quand même pour le LCD
-    
-    
+        switch (espnow_data) {
+            case ESPNOW_EEBL_CRIT:
+                // Mettre la PWM à 100% pour l'alerte 6
+                vTaskDelay(pdMS_TO_TICKS(300));
+                break;
+            //même chose pour le cas a gauche ou a droite 
+            case ESPNOW_DNPW_G:
+            case ESPNOW_DNPW_D:
+                DatatMoteur = SERVO_CENTRE;
+                if (xQueueSend(queueMoteur_tx, &DatatMoteur, portMAX_DELAY) == pdTRUE) {
+                    vTaskDelay(pdMS_TO_TICKS(300));
+                }
+                break;
+
+            case ESPNOW_FCW_CRIT:
+                DatatMoteur = MOTEUR_AVANT_LENT;
+                if (xQueueSend(queueMoteur_tx, &DatatMoteur, portMAX_DELAY) == pdTRUE) {
+                    vTaskDelay(pdMS_TO_TICKS(300));
+                }
+                break;
+
+            default:
+                break;
+        }
+
+        // Effectuer un ET logique avec 0xC0 pour extraire les 2 bits de poids fort
+        int lcd_alert = espnow_data & 0xC0;
+        if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
+            vTaskDelay(pdMS_TO_TICKS(300));
+        }
+
+        return true; // Une donnée a été traitée
+    }
+
+    return false; // Aucune donnée à traiter
 }
 
 void task_calculateur(void *pvParameters) {
@@ -96,47 +132,9 @@ void task_calculateur(void *pvParameters) {
     ALERT_DATA_FORMAT espnow_data, moteur_data, capteur_data[SENSOR_FRAME_LENGH];
     ALERT_DATA_FORMAT moteur_received, capteur_received;
     while (1) {
-        /**
-         * @brief Réception d'un EEBL du véhicule distant on envoie l'info au LCD
-         * @param EEBL Freinage brusque
-         * 
-         */
-        if (xQueueReceive(queueESPNOW_rx, &espnow_data, portMAX_DELAY) == pdTRUE) {
-            ALERT_DATA_FORMAT DatatMoteur;
+
+
         
-            switch (espnow_data) {
-                case ESPNOW_EEBL_CRIT:
-                    // Mettre la PWM à 100% pour l'alerte 6
-                    vTaskDelay(pdMS_TO_TICKS(300));
-                    break;
-        
-                case ESPNOW_DNPW_G:
-                case ESPNOW_DNPW_D:
-                    DatatMoteur = SERVO_CENTRE;
-                    if (xQueueSend(queueMoteur_tx, &DatatMoteur, portMAX_DELAY) == pdTRUE) {
-                        vTaskDelay(pdMS_TO_TICKS(300));
-                    }
-                    break;
-        
-                case ESPNOW_FCW_CRIT:
-                    DatatMoteur = MOTEUR_AVANT_LENT;
-                    if (xQueueSend(queueMoteur_tx, &DatatMoteur, portMAX_DELAY) == pdTRUE) {
-                        vTaskDelay(pdMS_TO_TICKS(300));
-                    }
-                    break;
-        
-                default:
-                    break;
-            }
-        
-            // Effectuer un ET logique avec 0xC0 pour extraire les 2 bits de poids fort
-            int lcd_alert = espnow_data & 0xC0;
-            if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
-                vTaskDelay(pdMS_TO_TICKS(300));
-            }
-        }
-        
-        }
         // Dépiler moteur et capteur séparément
         // Reprendre car un cas d'erreur est qu'il peut ne rien avoir car ça a été dépilé avant
         moteur_data = xQueueReceive(queueMoteur_rx, &moteur_received, portMAX_DELAY);
@@ -204,7 +202,6 @@ void task_calculateur(void *pvParameters) {
             xQueueSend(queueMoteur_tx, &capteur_data, portMAX_DELAY);
             vTaskDelay(pdMS_TO_TICKS(300));
             continue;
-        }
         }
 
     }
