@@ -1,12 +1,14 @@
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
+#include "calculateur.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+/** @brief Liste des entrées */
+#define SENSOR_FRAME_LENGH 7
+
+
 /**
- * @brief Liste des alertes
+ * @brief Liste des alertes capteur
  *  
  */
 #define BSW_G 1

@@ -20,34 +20,17 @@ static const char *TAG = "MAIN";
 
 
 /**
- * @brief initialisation des queues d'I/O et de la tache du calculateur
- * 
+ * @brief Initialisation de toutes les taches du système
+ * mettre des log en cas d'erreur seulement
  * @return ESP_OK la configuration c'est bien déroulé
- * ESP_NOK une erreur a été rencontré
+ * @return ESP_NOK une erreur a été rencontré
  */
-esp_err_t CalculatorTaskQueueInitiator(void){
-    // Queue réceptrice vu du calculateur
-    queueCapteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
-    queueMoteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
-    queueESPNOW_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
-    
-    queueLCD_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
-    queueMoteur_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
-    queueESPNOW_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,ALERT_DATA_FORMAT);
+esp_err_t ADASTaskQueueInitiator(void){
 
-    xTaskCreate(task_calculateur,"task_calculator",CALCULATOR_STACK_SIZE,NULL,1,NULL);
-    xTaskCreate(sensor_task, "Sensor Task", 1024, NULL, 2, NULL);
-    // Vérification des queues
-    if (!queueCapteur_rx || !queueMoteur_rx || !queueESPNOW_rx ||
-        !queueLCD_tx || !queueMoteur_tx || !queueESPNOW_tx) {
-        ESP_LOGE(TAG,"Erreur à la création des Queue");
-        return ESP_FAIL;
-    }
+    esp_err_t ret = CalculatorTaskQueueInitiator();
 
-    // Création des tâches
-    if (xTaskCreate(task_calculateur, "task_calculator", CALCULATOR_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
-        ESP_LOGE(TAG,"Erreur à la création de la taches calculator");
-        return ESP_FAIL;
+    if (ret != ESP_OK){
+        ESP_LOGE(TAG, "Erreur à la création des tâches calculateur");
     }
 
     if (xTaskCreate(sensor_task, "Sensor Task", 1024, NULL, 2, NULL) != pdPASS) {
@@ -64,23 +47,12 @@ void app_main() {
 
     ESP_LOGI(TAG, "Système de détection d'angle mort initialisé.");
 
-    esp_err_t ret = CalculatorTaskQueueInitiator();
+    esp_err_t ret = ADASTaskQueueInitiator();
     // Vérification du retour d'erreur
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "Initialisation des tâches et des queues réussie.");
     } else {
         ESP_LOGE(TAG, "Échec de l'initialisation des tâches et des queues ! Code d'erreur : %d", err);
-        // Ici, tu peux décider de redémarrer l'ESP32 en cas d'échec
-        // esp_restart();
     }
     
 }
-
-
-
-
-
-
-
-
-

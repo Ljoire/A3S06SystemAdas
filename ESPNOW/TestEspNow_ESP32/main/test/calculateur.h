@@ -1,3 +1,7 @@
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+
 /**
  * @brief Liste des alertes
  *  
@@ -24,6 +28,9 @@
 #define CALCULATOR_QUEUE_LENGHT 15
 #define ALERT_DATA_FORMAT sizeof(uint16_t)
 #define CALCULATOR_STACK_SIZE 2
+
+
+esp_err_t CalculatorTaskQueueInitiator(void);
 
 static void task_calculateur(void *pvParameters);
 
