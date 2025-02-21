@@ -25,6 +25,22 @@ static const char *TAG = "CALCULATEUR";
 #define ESPNOW_DNPW_G 12
 #define ESPNOW_DNPW_D 14
 #define ESPNOW_FCW_CRIT 19
+    /** @brief capteur */
+    #define CAPTEUR_NO_ERROR 0
+//EEBL
+#define CAPTEUR_EEBL_MID 1
+#define CAPTEUR_EEBL_HIGH 3
+#define CAPTEUR_EEBL_CRIT 5
+//BSW
+#define CAPTEUR_BSW_GAUCHE 7
+#define CAPTEUR_BSW_DROITE 9
+//DNPW
+#define CAPTEUR_DNPW_G 11
+#define CAPTEUR_DNPW_D 13
+//FCW
+#define CAPTEUR_FCW_MID 15
+#define CAPTEUR_FCW_HIGH 16
+#define CAPTEUR_FCW_CRIT 18
 //Trame du capteur [Code Alerte, Distance1, Distance2,Distance3,Distance4,Distance5,Distance6]
 #define SENSOR_FRAME_LENGH 6 
 //en comptant le 0
@@ -83,7 +99,12 @@ esp_err_t CalculatorTaskQueueInitiator(void){
 }
 
 
-/********** FONCTION D ALERTE  DE L ESP***********/
+/**
+ * @brief Fonction de traitement des alertes reçu par l'ESPNOW
+ * Se réfère aux informations présent dans la table des alertes 
+ * @return true données présente et traitée
+ * @return false Donées non présente
+ */
 bool ProcessEspNowData(void) {
     ALERT_DATA_FORMAT espnow_data;
     
@@ -127,18 +148,84 @@ bool ProcessEspNowData(void) {
     return false; // Aucune donnée à traiter
 }
 
+bool ProcessCapteurData(ALERT_DATA_FORMAT *capteur_data) {
+    ALERT_DATA_FORMAT alert_data = capteur_data;
+    if (xQueueReceive(queueESPNOW_rx, &capteur_data, portMAX_DELAY) == pdTRUE) {
+        
+        ALERT_DATA_FORMAT moteur_data;
+        ALERT_DATA_FORMAT espnow_data = alert_data + 1;
+
+        switch (alert_data)
+        {
+        case CAPTEUR_EEBL_MID:
+            //Mettre SONNERIE_LOW
+            break;
+        case CAPTEUR_EEBL_HIGH:
+            moteur_data = MOTEUR_AVANT_LENT;
+            //Mettre SONNERIE_INTERMEDIAIRE
+            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+                vTaskDelay(pdMS_TO_TICKS(300));
+            }
+            break;
+        case CAPTEUR_EEBL_CRIT:
+            //Mettre SONNERIE_FORT
+            moteur_data = MOTEUR_STOP;
+            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+                vTaskDelay(pdMS_TO_TICKS(300));
+            }
+            break;
+        case CAPTEUR_BSW_GAUCHE:
+        case CAPTEUR_BSW_DROITE:
+        case CAPTEUR_DNPW_G:
+        case CAPTEUR_DNPW_D:
+            moteur_data = SERVO_CENTRE;  
+            //Mettre SONNERIE_INTERMEDIAIRE  
+            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+                vTaskDelay(pdMS_TO_TICKS(300));
+            }
+            break;      
+        case CAPTEUR_FCW_HIGH:
+            //mettre sonnerie low 
+            moteur_data = MOTEUR_AVANT_LENT;
+            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+                vTaskDelay(pdMS_TO_TICKS(300));
+            }
+            break;
+        case CAPTEUR_FCW_CRIT:
+            //mettre SONNERIE_intermediaire
+            moteur_data = MOTEUR_STOP;
+            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+                vTaskDelay(pdMS_TO_TICKS(300));
+            }
+            break;
+            default:
+            break;
+        }
+        // Effectuer un ET logique avec 0x80 pour extraire le bits de poids fort
+        int lcd_alert = espnow_data & 0x80;
+        if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
+            vTaskDelay(pdMS_TO_TICKS(300));
+        }
+        return true;
+    }
+    //pas d'alerte
+    return false
+        
+}
 void task_calculateur(void *pvParameters) {
     //Variable d'accueil local
-    ALERT_DATA_FORMAT espnow_data, moteur_data, capteur_data[SENSOR_FRAME_LENGH];
+    ALERT_DATA_FORMAT espnow_data, luminosite_data, capteur_data[SENSOR_FRAME_LENGH];
     ALERT_DATA_FORMAT moteur_received, capteur_received;
     while (1) {
-
-
+        xQueueReceive(queueCapteur_rx, &capteur_received, portMAX_DELAY);
         
+        //sera implémenté avec le capteur
+        //luminosite_data = xQueueReceive(queueMoteur_rx, &moteur_received, portMAX_DELAY);
+
+
+        ProcessEspNowData();
         // Dépiler moteur et capteur séparément
         // Reprendre car un cas d'erreur est qu'il peut ne rien avoir car ça a été dépilé avant
-        moteur_data = xQueueReceive(queueMoteur_rx, &moteur_received, portMAX_DELAY);
-        capteur_data = xQueueReceive(queueCapteur_rx, &capteur_received, portMAX_DELAY);
         /**
          * @brief Le capteur détecte un DNPW alors que le moteur est en train de tourner 
          * TODO implémenter le cas distant avec un envoie en ESPNOW
