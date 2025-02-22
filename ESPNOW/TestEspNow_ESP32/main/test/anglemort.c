@@ -4,8 +4,20 @@
 #include <esp_timer.h>
 #include <rom/ets_sys.h>
 #include <math.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
+#include "esp_log.h"
 
-#define ALERT_DISTANCE 20  // Distance seuil pour déclencher une alerte
+#define ALERT_DISTANCE_30 30 
+#define ALERT_DISTANCE_20 20 
+#define ALERT_DISTANCE_10 10
+
+static const char *TAG = "ANGLEMORT";
+
+float global_distances[6] = {-1, -1, -1, -1, -1, -1};
+
+extern QueueHandle_t queueCapteur_rx; 
 
 void hc_sr04_init(hc_sr04_t *sensor) {
     gpio_config_t io_conf = {
@@ -43,72 +55,49 @@ float measure_distance_cm(hc_sr04_t *sensor) {
     return distance_cm;
 }
 
-uint8_t detect_alert() {
+void detect_alert() {
     hc_sr04_t capteurs[] = {
         {TRIGGER_GPIO_ARG, ECHO_GPIO_ARG},
         {TRIGGER_GPIO_ARD, ECHO_GPIO_ARD},
         {TRIGGER_GPIO_AV, ECHO_GPIO_AV},
         {TRIGGER_GPIO_AVG, ECHO_GPIO_AVG},
-        {TRIGGER_GPIO_AVD, ECHO_GPIO_AVD}
+        {TRIGGER_GPIO_AVD, ECHO_GPIO_AVD},
+        {TRIGGER_GPIO_AR, ECHO_GPIO_AR}  
     };
 
-    float distances[5];
-    for (int i = 0; i < 5; i++) {
+    uint8_t alert_code = CAPTEUR_NO_ERROR;
+
+    for (int i = 0; i < 6; i++) {
         hc_sr04_init(&capteurs[i]);
-        distances[i] = measure_distance_cm(&capteurs[i]);
+        global_distances[i] = measure_distance_cm(&capteurs[i]);
     }
 
-    uint16_t alert_flags = 0;
+    if (global_distances[2] <= ALERT_DISTANCE_30 && global_distances[2] > ALERT_DISTANCE_20 &&
+        global_distances[5] <= ALERT_DISTANCE_30 && global_distances[5] > ALERT_DISTANCE_20) {
+        alert_code = 1;
+    } else if (global_distances[2] <= ALERT_DISTANCE_20 && global_distances[2] > ALERT_DISTANCE_10 &&
+               global_distances[5] <= ALERT_DISTANCE_20 && global_distances[5] > ALERT_DISTANCE_10) {
+        alert_code = 3;
+    } else if (global_distances[2] <= ALERT_DISTANCE_10 && global_distances[2] > 2 &&
+        global_distances[5] <= ALERT_DISTANCE_10 && global_distances[5] > 2) {
+        alert_code = 5;
+    }
 
-    if (distances[0] < ALERT_DISTANCE) alert_flags |= (1 << 0);
-    if (distances[1] < ALERT_DISTANCE) alert_flags |= (1 << 1);
-    if (distances[0] < ALERT_DISTANCE || distances[3] < ALERT_DISTANCE) alert_flags |= (1 << 2);
-    if (distances[1] < ALERT_DISTANCE || distances[4] < ALERT_DISTANCE) alert_flags |= (1 << 3);
-    if (distances[2] < 60) alert_flags |= (1 << 4);
-    if (distances[2] < 40) alert_flags |= (1 << 5);
-    if (distances[2] < 20) alert_flags |= (1 << 6);
-    if (distances[2] != -1 && distances[4] == -1 && distances[1] == -1) alert_flags |= (1 << 7);
-    if (distances[2] != -1 && distances[3] == -1 && distances[0] == -1) alert_flags |= (1 << 8);
+    if (global_distances[0] <= ALERT_DISTANCE_30) {
+        alert_code = 7;
+    }
+    if (global_distances[1] <= ALERT_DISTANCE_30) {
+        alert_code = 9;
+    }
 
-    return alert_flags;
-}
-extern void sensor_task(void *pvParameters) {
-    while (1) {
-        uint8_t alerts = detect_alert();
+    if (global_distances[1] <= ALERT_DISTANCE_30 && global_distances[3] <= ALERT_DISTANCE_30) {
+        alert_code = 11;
+    }
+    if (global_distances[0] <= ALERT_DISTANCE_30 && global_distances[3] <= ALERT_DISTANCE_30) {
+        alert_code = 13;
+    }
 
-        if (alerts & (1 << 0)) {
-            ESP_LOGI(TAG, "⚠️ Angle mort gauche !");
-        }
-        if (alerts & (1 << 1)) {
-            ESP_LOGI(TAG, "⚠️ Angle mort droit !");
-        }
-        if (alerts & (1 << 2)){
-            ESP_LOGI(TAG, "⚠️ Obstacle arrière gauche ou avant gauche !");
-  
-        }         
-        if (alerts & (1 << 3)){
-            ESP_LOGI(TAG, "⚠️ Obstacle arrière droit ou avant droit !");  
-        } 
-        if (alerts & (1 << 4)){
-            ESP_LOGI(TAG, "⚠️ Distance < 60 cm !");
-        } 
-        if (alerts & (1 << 5)){
-            ESP_LOGI(TAG, "⚠️ Distance < 40 cm !");
-        } 
-        if (alerts & (1 << 6)) {
-            ESP_LOGI(TAG, "⚠️ Distance < 20 cm !");
-        }
-        if (alerts & (1 << 7)){
-            ESP_LOGI(TAG, "🚗 Dépassement à droite !");
-        }
-        if (alerts & (1 << 8)){
-            ESP_LOGI(TAG, "🚗 Dépassement à gauche !");
-        } 
-
-        if (alerts == 0){
-            ESP_LOGI(TAG, "Aucun danger détecté.");
-        } 
-        
-        vTaskDelay(pdMS_TO_TICKS(5000));
+    if (alert_code != CAPTEUR_NO_ERROR) {
+        xQueueSend(queueCapteur_rx, &alert_code, portMAX_DELAY);
     }
 }
