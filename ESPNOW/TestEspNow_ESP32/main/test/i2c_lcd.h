@@ -107,4 +107,12 @@ void lcd2_backlight(bool on);
  * 
  * @return esp_err_t ESP_OK l'affichage c'est bien réalisé ESP_NOK Erreur dans le réaffichage
  */
-esp_err_t lcd16x2StdPrint(void)
+esp_err_t lcd16x2StdPrint(void);
+
+/**
+ * @brief Initialisation du LCD 20x4
+ * 
+ */
+void lcd_init(void);
+
+
