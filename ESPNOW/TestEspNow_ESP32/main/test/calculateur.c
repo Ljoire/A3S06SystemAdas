@@ -149,7 +149,7 @@ bool ProcessEspNowData(void) {
 }
 
 bool ProcessCapteurData(ALERT_DATA_FORMAT *capteur_data) {
-    ALERT_DATA_FORMAT alert_data = capteur_data;
+    ALERT_DATA_FORMAT alert_data = capteur_data[0];
     if (xQueueReceive(queueESPNOW_rx, &capteur_data, portMAX_DELAY) == pdTRUE) {
         
         ALERT_DATA_FORMAT moteur_data;
@@ -201,17 +201,26 @@ bool ProcessCapteurData(ALERT_DATA_FORMAT *capteur_data) {
             default:
             break;
         }
-        // Effectuer un ET logique avec 0x80 pour extraire le bits de poids fort
-        int lcd_alert = espnow_data & 0x80;
-        if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
-            vTaskDelay(pdMS_TO_TICKS(300));
+        //si il y a une alerte alors on fait un envoie en 2 fois sinon
+        
+        if ((alert_data & 0xC0) == 0xC0) {
+            int lcd_alert = alert_data & 0xC0;
+            if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
+                for (int i = 1; i < SENSOR_FRAME_LENGH; i++) {
+                    xQueueSend(queueLCD_tx, &espnow_data[i], portMAX_DELAY);
+                }
+            }
+            printf("Les deux bits MSB sont à 1\n");
+        } else {
+            //on envoie tout d'un coup
         }
         return true;
     }
-    //pas d'alerte
-    return false
+    return false;
         
 }
+
+
 void task_calculateur(void *pvParameters) {
     //Variable d'accueil local
     ALERT_DATA_FORMAT espnow_data, luminosite_data, capteur_data[SENSOR_FRAME_LENGH];
