@@ -1,5 +1,6 @@
 #include "anglemort.h"
 #include "calculateur.h"
+#include "i2c_lcd.h"
 
 #include <stdio.h>
 #include <stdlib.h>
