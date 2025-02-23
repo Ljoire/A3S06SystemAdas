@@ -139,6 +139,9 @@ esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr){
     
 }
 
+esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t size,uint8_t MaskLine){
+
+}
 // Tâche d'affichage local
 static void display_task(void *pvParameters) {
 
@@ -158,7 +161,7 @@ static void display_task(void *pvParameters) {
         if (xQueueReceive(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
             switch (lcd_alert)
             {
-            case /* constant-expression */:
+            case :
                 /* code */
                 break;
             

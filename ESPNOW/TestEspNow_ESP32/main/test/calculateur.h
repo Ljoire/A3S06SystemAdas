@@ -10,7 +10,7 @@
 #define ESPNOW_DNPW_D 14
 #define ESPNOW_FCW_CRIT 19
     /** @brief capteur */
-    #define CAPTEUR_NO_ERROR 0
+#define CAPTEUR_NO_ERROR 0
 //EEBL
 #define CAPTEUR_EEBL_MID 1
 #define CAPTEUR_EEBL_HIGH 3
@@ -48,6 +48,7 @@
  */
 #define CALCULATOR_QUEUE_LENGHT 15
 #define ALERT_DATA_FORMAT uint8_t
+#define DISTANCE_DATA_FORMAT uint16_t
 #define CALCULATOR_STACK_SIZE 1024
 
 

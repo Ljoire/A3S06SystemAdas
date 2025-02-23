@@ -53,8 +53,8 @@ esp_err_t CalculatorTaskQueueInitiator(void){
 
     queueMoteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     queueESPNOW_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
-
-    queueLCD_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    //distance en u16 donc != aux autres
+    queueLCD_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(DISTANCE_DATA_FORMAT));
     queueMoteur_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     queueESPNOW_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
 
@@ -121,7 +121,7 @@ bool ProcessCapteurData(void) {
         
         ALERT_DATA_FORMAT moteur_data;
         ALERT_DATA_FORMAT espnow_data = capteur_data + 1;
-        ALERT_DATA_FORMAT alert_data =capteur_data;
+        ALERT_DATA_FORMAT alert_data = capteur_data;
         switch (alert_data)
         {
         case CAPTEUR_EEBL_MID:
@@ -194,5 +194,6 @@ void task_calculateur(void *pvParameters) {
 
         bool retCapt = ProcessCapteurData();
         bool retEspNow = ProcessEspNowData(); 
+        //ajouté timer qui envoie toutes les 500 ms les valeur de distance
     }
 }
