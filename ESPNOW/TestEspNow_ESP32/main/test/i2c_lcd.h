@@ -3,7 +3,7 @@
 
 #include <driver/i2c.h>
 #include <stdbool.h>
-static const char *TAG = "LCD";
+const char *TAG = "LCD";
 
 
 
@@ -39,11 +39,11 @@ static const char *TAG = "LCD";
 #define LCD_BLINKOFF       0x00
 
 // Bits de contrôle PCF8574
-#define LCD2_RS_BIT      0x01
-#define LCD2_RW_BIT      0x02
-#define LCD2_EN_BIT      0x04
-#define LCD2_BL_BIT      0x08
-#define LCD2_DATA_BITS   0xF0
+#define LCD_RS_BIT      0x01
+#define LCD_RW_BIT      0x02
+#define LCD_EN_BIT      0x04
+#define LCD_BL_BIT      0x08
+#define LCD_DATA_BITS   0xF0
 
 // Drapeaux pour le mode d'entrée
 #define LCD_ENTRYRIGHT          0x00
@@ -110,9 +110,12 @@ void lcd2_backlight(bool on);
 esp_err_t lcd16x2StdPrint(void);
 
 /**
- * @brief Initialisation du LCD 20x4
+ * @brief Fonction pour l'initalisation des 2 LCD. 
  * 
+ * @param i2c_port port utilisé par l'écran
+ * @param i2caddr Adresse utilisé par l'écran
+ * @param FourOrTwoLine Si true l'écran initialisé est un 4 ligne si false un deux ligne
  */
-void lcd_init(void);
+void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine);
 
 
