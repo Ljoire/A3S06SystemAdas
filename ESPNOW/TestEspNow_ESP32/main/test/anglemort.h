@@ -17,7 +17,7 @@
 #define TRIGGER_GPIO_AR   GPIO_NUM_32  // Capteur Arrière
 #define ECHO_GPIO_AR      GPIO_NUM_33
 
-extern float global_distances[6];
+extern uint16_t global_distances[6];
 // Structure pour représenter un capteur
 typedef struct {
     gpio_num_t trigger_pin;
