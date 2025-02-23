@@ -103,6 +103,7 @@ void detect_alert() {
             if (xQueueSend(queueCapteur_rx, &alert_code, portMAX_DELAY) != pdPASS) {
                 ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
             }
+            ESP_LOGI(TAG,"envoie d'une info");
         } else {
             ESP_LOGE("Queue", "queueCapteur_rx is NULL");
         }   

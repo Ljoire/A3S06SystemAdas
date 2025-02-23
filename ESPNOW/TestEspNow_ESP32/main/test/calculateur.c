@@ -147,21 +147,23 @@ bool ProcessCapteurData(void) {
         case CAPTEUR_DNPW_D:
             moteur_data = SERVO_CENTRE;  
             //Mettre SONNERIE_INTERMEDIAIRE  
-            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
-                vTaskDelay(pdMS_TO_TICKS(300));
+            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE){
+                if (xQueueSend(queueESPNOW_tx,&espnow_data,portMAX_DELAY) == pdTRUE) {
+                    vTaskDelay(pdMS_TO_TICKS(300));
+                }
             }
             break;      
         case CAPTEUR_FCW_HIGH:
             //mettre sonnerie low 
             moteur_data = MOTEUR_AVANT_LENT;
-            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,&espnow_data,portMAX_DELAY) == pdTRUE) {
                 vTaskDelay(pdMS_TO_TICKS(300));
             }
             break;
         case CAPTEUR_FCW_CRIT:
             //mettre SONNERIE_intermediaire
             moteur_data = MOTEUR_STOP;
-            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,&espnow_data,portMAX_DELAY) == pdTRUE) {
                 vTaskDelay(pdMS_TO_TICKS(300));
             }
             break;
