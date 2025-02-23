@@ -53,7 +53,7 @@ void app_main() {
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "Initialisation des tâches et des queues réussie.");
     } else {
-        ESP_LOGE(TAG, "Échec de l'initialisation des tâches et des queues ! Code d'erreur : %d", err);
+        ESP_LOGE(TAG, "Échec de l'initialisation des tâches et des queues !");
     }
     
 }

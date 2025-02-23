@@ -26,8 +26,8 @@ typedef struct {
 
 // Fonctions
 void hc_sr04_init(hc_sr04_t *sensor);
-float measure_distance_cm(hc_sr04_t *sensor);
-uint8_t detect_alert();
+uint16_t measure_distance_cm(hc_sr04_t *sensor);
+void detect_alert();
 
 #endif // HC_SR04_H
 

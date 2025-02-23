@@ -1,7 +1,7 @@
 #include "i2c_lcd.h"
 #include "calculateur.h"
 #include <esp_err.h>
-
+static const char *TAG = "LCD";
 // ################### PORT I2C LCD1 ET LCD2 ###################
 //LCD2
 static i2c_port_t i2c_port2 = I2C_NUM_1; // Utilisation du second port I2C

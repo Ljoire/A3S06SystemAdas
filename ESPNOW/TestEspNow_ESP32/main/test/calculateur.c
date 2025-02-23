@@ -15,8 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-
+#include "esp_log.h"
+static const char *TAG = "CALCULATEUR";
 /**
  * @brief initialisation des queues d'I/O et de la tache du calculateur
  * 
@@ -24,6 +24,15 @@
  * @brief Initialisation de tout les tâches et Queue 
  * @brief liste des queue d'entrées sorties 
  */
+QueueHandle_t queueCapteur_rx = NULL;
+QueueHandle_t queueMoteur_rx = NULL;
+QueueHandle_t queueESPNOW_rx = NULL;
+
+QueueHandle_t queueLCD_tx = NULL;
+QueueHandle_t queueMoteur_tx = NULL;
+QueueHandle_t queueESPNOW_tx = NULL;
+
+
 //Queue par lequel le calculateur reçoit des codes erreur 
 extern QueueHandle_t queueCapteur_rx;
 extern QueueHandle_t queueMoteur_rx;

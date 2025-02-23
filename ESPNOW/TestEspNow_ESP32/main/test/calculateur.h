@@ -2,7 +2,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 
-static const char *TAG = "CALCULATEUR";
+
     /***** @brief Liste des entrée ****/
     /** @brief ESPNOW **/
 #define ESPNOW_EEBL_CRIT 6
@@ -79,4 +79,4 @@ bool ProcessEspNowData(void);
  * @return true alerte traité
  * @return false pas d'alerte
  */
-bool ProcessCapteurData(ALERT_DATA_FORMAT *capteur_data);
+bool ProcessCapteurData();

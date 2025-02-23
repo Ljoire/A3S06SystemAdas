@@ -3,7 +3,7 @@
 
 #include <driver/i2c.h>
 #include <stdbool.h>
-const char *TAG = "LCD";
+
 
 
 
@@ -51,7 +51,6 @@ const char *TAG = "LCD";
 #define LCD_ENTRYSHIFTINCREMENT 0x01
 #define LCD_ENTRYSHIFTDECREMENT 0x00
 
-void lcd_init(void);
 void lcd_clear(void);
 void lcd_home(void);
 void lcd_set_cursor(uint8_t row, uint8_t col);
