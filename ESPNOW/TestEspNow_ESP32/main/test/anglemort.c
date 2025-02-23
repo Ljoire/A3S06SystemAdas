@@ -97,7 +97,7 @@ void detect_alert() {
     if (global_distances[0] <= ALERT_DISTANCE_30 && global_distances[3] <= ALERT_DISTANCE_30) {
         alert_code = 13;
     }
-
+    ESP_LOGI(TAG,"Le code renvoyé est :%d",alert_code);
     if (alert_code != CAPTEUR_NO_ERROR) {
         if (queueCapteur_rx != NULL) {
             if (xQueueSend(queueCapteur_rx, &alert_code, portMAX_DELAY) != pdPASS) {
