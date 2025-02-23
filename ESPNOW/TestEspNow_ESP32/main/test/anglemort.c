@@ -15,7 +15,7 @@
 
 static const char *TAG = "ANGLEMORT";
 
-float global_distances[6] = {-1, -1, -1, -1, -1, -1};
+uint16_t global_distances[6] = {0, 0, 0, 0, 0, 0};
 
 extern QueueHandle_t queueCapteur_rx; 
 
@@ -34,24 +34,24 @@ void hc_sr04_init(hc_sr04_t *sensor) {
     gpio_config(&io_conf);
 }
 
-float measure_distance_cm(hc_sr04_t *sensor) {
+uint16_t measure_distance_cm(hc_sr04_t *sensor) {
     gpio_set_level(sensor->trigger_pin, 1);
     ets_delay_us(10);
     gpio_set_level(sensor->trigger_pin, 0);
 
     uint64_t timeout = esp_timer_get_time() + 30000;
     while (gpio_get_level(sensor->echo_pin) == 0) {
-        if (esp_timer_get_time() > timeout) return -1;
+        if (esp_timer_get_time() > timeout) return 0;
     }
     uint64_t echo_start = esp_timer_get_time();
 
     while (gpio_get_level(sensor->echo_pin) == 1) {
-        if (esp_timer_get_time() > timeout) return -1;
+        if (esp_timer_get_time() > timeout) return 0;
     }
     uint64_t echo_end = esp_timer_get_time();
 
-    float distance_cm = (echo_end - echo_start) / 58.0;
-    if (distance_cm < 2 || distance_cm > 400) return -1;
+    uint16_t distance_cm = (uint16_t)((echo_end - echo_start) / 58.0);
+    if (distance_cm < 2 || distance_cm > 400) return 0;
     return distance_cm;
 }
 
