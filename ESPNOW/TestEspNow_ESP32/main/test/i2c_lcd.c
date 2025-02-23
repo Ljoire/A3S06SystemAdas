@@ -140,7 +140,28 @@ esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr){
 }
 
 esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t size,uint8_t MaskLine){
-
+//affichage sur le 20x4
+    for(int i = 0;i <LCD2_ROWS;i++){
+        //si le bit de MaskLine est à 1 on n'éxcécute pas cette itération car une erreur est affiché
+        if (MaskLine & (1 << i)) {
+            distance++;
+            continue;
+        }
+        lcd_set_cursor(I2C_NUM_0,LCD2_I2C_ADDR,i,DISTANCE_RANGE_PRINT);
+        lcd_print(I2C_NUM_0,LCD2_I2C_ADDR,*distance);
+        distance++;
+    }
+    for(int i=0;i<LCD_ROWS;i++){
+        //on ajoute LCD_ROWS pour vérifier le 0+4 ème bit
+        if (MaskLine & (1 << i + LCD2_ROWS)) {
+            distance++;
+            continue;
+        }
+        lcd_set_cursor(I2C_NUM_1,LCD_I2C_ADDR,i,DISTANCE_RANGE_PRINT);
+        lcd_print(I2C_NUM_1,LCD_I2C_ADDR,*distance);
+        distance++;
+    }
+    return ESP_OK;
 }
 // Tâche d'affichage local
 static void display_task(void *pvParameters) {
@@ -154,14 +175,15 @@ static void display_task(void *pvParameters) {
     lcd_backlight(I2C_NUM_1,LCD2_I2C_ADDR,true);
     lcdStdPrint(I2C_NUM_1,LCD2_I2C_ADDR);
 
-
+    uint8_t lcd_alert;
+    // un bit par ligne en partant du MSB si il est mis a 1 alors il y a une alerte d'affiché
+    uint8_t MaskLine = 0x00; 
     while (1) {
-        uint8_t lcd_alert;
-        uint8_t MaskLine = 0x00; // un bit par ligne en partant du MSB si il est mis a 1 alors il y a une alerte d'affiché
+
         if (xQueueReceive(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
             switch (lcd_alert)
             {
-            case :
+            case DISTANCE_A_RECEVOIR:
                 /* code */
                 break;
             

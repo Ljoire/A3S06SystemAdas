@@ -39,7 +39,7 @@
 #define SONNERIE_INTERMEDIAIRE 2
 #define SONNERIE_FORT 3
 /** @brief LCD */
-
+#define DISTANCE_A_RECEVOIR 0x0000
 
 /**
  * @brief Initialisation de tout les tâches et Queue 
