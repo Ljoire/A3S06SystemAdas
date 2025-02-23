@@ -101,3 +101,10 @@ void detect_alert() {
         xQueueSend(queueCapteur_rx, &alert_code, portMAX_DELAY);
     }
 }
+
+void sensor_task(void *pvParameters) {
+    while (1) {
+        detect_alert();
+        vTaskDelay(pdMS_TO_TICKS(500)); 
+    }
+}
