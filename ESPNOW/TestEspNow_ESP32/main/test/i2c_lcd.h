@@ -1,6 +1,3 @@
-#ifndef I2C_LCD2_H
-#define I2C_LCD2_H
-
 #include <driver/i2c.h>
 #include <stdbool.h>
 
@@ -51,14 +48,8 @@
 #define LCD_ENTRYSHIFTINCREMENT 0x01
 #define LCD_ENTRYSHIFTDECREMENT 0x00
 
-void lcd_clear(void);
-void lcd_home(void);
-void lcd_set_cursor(uint8_t row, uint8_t col);
-void lcd_print(const char* str);
-void lcd_backlight(bool on);
 
-
-#endif // I2C_LCD_H
+//#endif // I2C_LCD_H
 
 //################################# PARAMETRES DE CONFIIGURATION DU LCD 16X02   #################################
 
@@ -90,23 +81,9 @@ void lcd_backlight(bool on);
 #define LCD2_ENTRYSHIFTINCREMENT 0x01
 #define LCD2_ENTRYSHIFTDECREMENT 0x00
 
-// Fonctions pour le second LCD
-void lcd2_init(void);
-void lcd2_clear(void);
-void lcd2_home(void);
-void lcd2_set_cursor(uint8_t row, uint8_t col);
-void lcd2_print(const char* str);
-void lcd2_backlight(bool on);
-
 #endif // I2C_LCD2_H
 
-/**
- * @brief Reprend l'affichage standard du LCD quand il n'y a pas d'alerte.
- * Cette fonction  est appelé lors d'une demande de RAZ fourni par le calculateur
- * 
- * @return esp_err_t ESP_OK l'affichage c'est bien réalisé ESP_NOK Erreur dans le réaffichage
- */
-esp_err_t lcd16x2StdPrint(void);
+
 
 /**
  * @brief Fonction pour l'initalisation des 2 LCD. 
@@ -117,4 +94,59 @@ esp_err_t lcd16x2StdPrint(void);
  */
 void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine);
 
+/**
+ * @brief Configuration du rétroéclairage du LCD
+ * 
+ * @param i2c_port Port i2c utilisé par l'ESP32 (I2C_NUM_0 ou I2C_NUM_1)
+ * @param i2caddr Adresse de l'appareil LCD_I2C_ADDR ou LCD2_I2C_ADDR
+ * @param on True : utilisation de l'éclairage Fales : Extinction
+ */
+void lcd_backlight(i2c_port_t i2c_port,uint8_t i2caddr,bool on);
 
+/**
+ * @brief Mise du curseur à un endroit spécifique si on utilise le LDD2(20x4) alors un offset est appliqué
+ * 
+ * @param i2c_port Port i2c utilisé par l'ESP32 (I2C_NUM_0 ou I2C_NUM_1)
+ * @param i2caddr Adresse de l'appareil LCD_I2C_ADDR ou LCD2_I2C_ADDR
+ * @param row Ligne désiré
+ * @param col Collonne désiré 
+ */
+void lcd_set_cursor(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t row, uint8_t col);
+
+/**
+ * @brief écriture d'un octet dans le LCD. Cette fonction est réutiliser pour lcd_print et send_cmd
+ * 
+ * @param i2c_port Port i2c utilisé par l'ESP32 (I2C_NUM_0 ou I2C_NUM_1)
+ * @param i2caddr Adresse de l'appareil LCD_I2C_ADDR ou LCD2_I2C_ADDR
+ * @param cmd données désirée, il faut envoyer la valeur en ASCII
+ * @param is_data présence de données 
+ * @return esp_err_t ESP_OK ou ESP_NOK selon l'éxécution de la fonction
+ */
+static esp_err_t lcd_write_byte(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t cmd, bool is_data);
+
+/**
+ * @brief Enovie d'une commande spécifique au LCD
+ * 
+ * @param i2c_port Port i2c utilisé par l'ESP32 (I2C_NUM_0 ou I2C_NUM_1)
+ * @param i2caddr Adresse de l'appareil LCD_I2C_ADDR ou LCD2_I2C_ADDR
+ * @param cmd Commande désirée
+ */
+static void lcd_send_cmd(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t cmd);
+
+/**
+ * @brief 
+ * 
+ * @param i2c_port Port i2c utilisé par l'ESP32 (I2C_NUM_0 ou I2C_NUM_1)
+ * @param i2caddr Adresse de l'appareil LCD_I2C_ADDR ou LCD2_I2C_ADDR
+ * @param str chaine de caractère à afficher
+ */
+void lcd_print(i2c_port_t i2c_port,uint8_t i2caddr,const char* str);
+
+/**
+ * @brief RAZ de l'affichage
+ * 
+ * @param i2c_port Port i2c utilisé par l'ESP32 (I2C_NUM_0 ou I2C_NUM_1)
+ * @param i2caddr Adresse de l'appareil LCD_I2C_ADDR ou LCD2_I2C_ADDR
+ * @return esp_err_t ESP_OK ou ESP_NOK selon l'éxécution de la fonction
+ */
+esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr);

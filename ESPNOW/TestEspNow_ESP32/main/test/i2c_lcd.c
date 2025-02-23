@@ -11,6 +11,9 @@ static i2c_port_t i2c_port = I2C_NUM_0;
 
 // ################### CONFIGURATION LCD  ###################
 
+char *tableLCD1 = {"G  : xx cm","D   : xx cm"};
+char *tableLCD2 = {"AV : xx cm","AVG: xx cm","AVD: xx cm","AR : xx cm"};
+
 void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine) {
     
     i2c_config_t conf;  // Déclaration avant le if
@@ -98,7 +101,7 @@ static esp_err_t lcd_write_byte(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t cmd,
     data[2] = low_nibble | LCD_EN_BIT;
     data[3] = low_nibble;
 
-    return i2c_master_write_to_device(i2c_port, LCD_I2C_ADDR, data, 4, 1000 / portTICK_PERIOD_MS);
+    return i2c_master_write_to_device(i2c_port, i2caddr, data, 4, 1000 / portTICK_PERIOD_MS);
 }
 
 static void lcd_send_cmd(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t cmd) {
@@ -116,5 +119,52 @@ void lcd_print(i2c_port_t i2c_port,uint8_t i2caddr,const char* str) {
     }
 }
 
+esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr){
+    //chaine d'affichage
+    return ESP_OK;
+
+    //si on RAZ le 20x4
+    if(i2caddr == LCD2_I2C_ADDR){
+        for(int i = 0; i < LCD2_ROWS;i++){
+            lcd_set_cursor(I2C_NUM_1,LCD2_I2C_ADDR,i,0);
+            lcd_print(I2C_NUM_1,LCD2_I2C_ADDR,tableLCD2[i]);
+        }
+    }
+    else{
+        for(int i = 0; i < LCD_ROWS;i++){
+            lcd_set_cursor(I2C_NUM_1,LCD_I2C_ADDR,i,0);
+            lcd_print(I2C_NUM_1,LCD_I2C_ADDR,tableLCD1[i]);
+        }
+    }
+    
+}
+
+// Tâche d'affichage local
+static void display_task(void *pvParameters) {
 
 
+    lcd_init(I2C_NUM_0,LCD_I2C_ADDR,false);//LCD 16x2
+    lcd_backlight(I2C_NUM_0,LCD_I2C_ADDR,true);
+    lcdStdPrint(I2C_NUM_0,LCD_I2C_ADDR);
+
+    lcd_init(I2C_NUM_1,LCD2_I2C_ADDR,true);//LCD 2Ox4
+    lcd_backlight(I2C_NUM_1,LCD2_I2C_ADDR,true);
+    lcdStdPrint(I2C_NUM_1,LCD2_I2C_ADDR);
+
+
+    while (1) {
+        uint8_t lcd_alert;
+        uint8_t MaskLine = 0x00; // un bit par ligne en partant du MSB si il est mis a 1 alors il y a une alerte d'affiché
+        if (xQueueReceive(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
+            switch (lcd_alert)
+            {
+            case /* constant-expression */:
+                /* code */
+                break;
+            
+            default:
+                break;
+            }
+        }
+    }
+}
