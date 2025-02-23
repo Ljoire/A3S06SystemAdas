@@ -7,7 +7,7 @@
 
 
 //################################# PARAMETRES UTILE
-// affichage des distanee 
+// affichage des distane
 #define DISTANCE_RANGE_PRINT 5
 //################################# PARAMETRES DE CONFIGURATION DU LCD 20X04   #################################
 
@@ -150,3 +150,12 @@ void lcd_print(i2c_port_t i2c_port,uint8_t i2caddr,const char* str);
  * @return esp_err_t ESP_OK ou ESP_NOK selon l'éxécution de la fonction
  */
 esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr);
+
+/**
+ * @brief Affichage des distances sur l'ensemble des lignes à l'exception de celles avec une erreur affiché
+ * 
+ * @param distance Les distances à afficher sur les lignes 
+ * @param MaskLine Masque binaire pour ne pas afficher de distance sur les lignes qui possède un erreur
+ * @return esp_err_t 
+ */
+esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine);

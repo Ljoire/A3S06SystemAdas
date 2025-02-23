@@ -190,10 +190,22 @@ void task_calculateur(void *pvParameters) {
     //Variable d'accueil local
     ALERT_DATA_FORMAT espnow_data, luminosite_data, capteur_data[SENSOR_FRAME_LENGH];
     ALERT_DATA_FORMAT moteur_received, capteur_received;
+    uint16_t cptRAZ;
     while (1) {
 
         bool retCapt = ProcessCapteurData();
         bool retEspNow = ProcessEspNowData(); 
+        if (retCapt && retEspNow == false){
+            cptRAZ ++;
+        }
+        if (retCapt && retEspNow == true){
+            cptRAZ = 0
+        }
+        if (cptRAZ == DELAY_FOR_SEND_RESET){
+            xQueueSend(queueLCD_tx,RESET_AFFICHAGE,portMAX_DELAY);
+            //Envoie des distance juste après
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
         //ajouté timer qui envoie toutes les 500 ms les valeur de distance
     }
 }

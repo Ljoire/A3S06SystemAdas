@@ -139,7 +139,7 @@ esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr){
     
 }
 
-esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t size,uint8_t MaskLine){
+esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine){
 //affichage sur le 20x4
     for(int i = 0;i <LCD2_ROWS;i++){
         //si le bit de MaskLine est à 1 on n'éxcécute pas cette itération car une erreur est affiché
@@ -184,9 +184,13 @@ static void display_task(void *pvParameters) {
             switch (lcd_alert)
             {
             case DISTANCE_A_RECEVOIR:
-                /* code */
+                lcdDistancePrint(lcd_alert,MaskLine);
+                vTaskDelay(pdMS_TO_TICKS(300));
                 break;
-            
+            case CAPTEUR_EEBL_MID:
+            case 
+                lcd_set_cursor(I2C_NUM_1,LCD2_I2C_ADDR,0,4);
+                lcd_print(I2C_NUM_1,LCD2_I2C_ADDR,"Att. Ralentir !");
             default:
                 break;
             }

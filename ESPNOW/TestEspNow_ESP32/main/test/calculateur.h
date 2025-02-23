@@ -5,11 +5,17 @@
 
     /***** @brief Liste des entrée ****/
     /** @brief ESPNOW **/
-#define ESPNOW_EEBL_CRIT 6
+//EEBL
+#define ESPNOW_EEBL_MID 2
+#define ESPNOW_EEBL_HIGH 4
+#define ESPNOW_EEBL_HIGH 6
+
 #define ESPNOW_DNPW_G 12
 #define ESPNOW_DNPW_D 14
 #define ESPNOW_FCW_CRIT 19
-    /** @brief capteur */
+
+
+    /** @brief capteur **/
 #define CAPTEUR_NO_ERROR 0
 //EEBL
 #define CAPTEUR_EEBL_MID 1
@@ -40,7 +46,8 @@
 #define SONNERIE_FORT 3
 /** @brief LCD */
 #define DISTANCE_A_RECEVOIR 0x0000
-
+#define RESET_AFFICHAGE 0x1F
+#define DELAY_FOR_SEND_RESET 30000
 /**
  * @brief Initialisation de tout les tâches et Queue 
  * 
