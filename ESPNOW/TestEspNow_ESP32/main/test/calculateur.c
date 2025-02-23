@@ -101,13 +101,13 @@ bool ProcessEspNowData(void) {
     return false; // Aucune donnée à traiter
 }
 
-bool ProcessCapteurData(ALERT_DATA_FORMAT *capteur_data) {
-    ALERT_DATA_FORMAT alert_data = capteur_data[0];
-    if (xQueueReceive(queueESPNOW_rx, &capteur_data, portMAX_DELAY) == pdTRUE) {
+bool ProcessCapteurData(void) {
+    ALERT_DATA_FORMAT capteur_data;
+    if (xQueueReceive(queueCapteur_rx, &capteur_data, portMAX_DELAY) == pdTRUE) {
         
         ALERT_DATA_FORMAT moteur_data;
-        ALERT_DATA_FORMAT espnow_data = alert_data + 1;
-
+        ALERT_DATA_FORMAT espnow_data = capteur_data + 1;
+        ALERT_DATA_FORMAT alert_data =capteur_data;
         switch (alert_data)
         {
         case CAPTEUR_EEBL_MID:

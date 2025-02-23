@@ -47,7 +47,8 @@ void lcd2_init(void) {
     ESP_LOGI(TAG, "LCD2 initialized successfully");
 }
 
-void lcd_init(void) {
+void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr) {
+    
     // Configuration I2C
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
@@ -68,11 +69,11 @@ void lcd_init(void) {
     uint8_t init_seq[] = {0x03, 0x03, 0x03, 0x02};
     for(int i = 0; i < 4; i++) {
         uint8_t data = (init_seq[i] << 4) | backlight_state;
-        uint8_t with_en = data | LCD_EN_BIT;
+        uint8_t with_en = data | LCD2_EN_BIT;
         uint8_t without_en = data;
         
         uint8_t buf[2] = {with_en, without_en};
-        i2c_master_write_to_device(i2c_port, LCD_I2C_ADDR, buf, 2, 1000 / portTICK_PERIOD_MS);
+        i2c_master_write_to_device(i2c_port, i2caddr, buf, 2, 1000 / portTICK_PERIOD_MS);
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 
