@@ -55,6 +55,8 @@ uint16_t measure_distance_cm(hc_sr04_t *sensor) {
     return distance_cm;
 }
 
+ALERT_DATA_FORMAT alert_code = CAPTEUR_NO_ERROR;
+
 void detect_alert() {
     hc_sr04_t capteurs[] = {
         {TRIGGER_GPIO_ARG, ECHO_GPIO_ARG},
@@ -65,7 +67,6 @@ void detect_alert() {
         {TRIGGER_GPIO_AR, ECHO_GPIO_AR}  
     };
 
-    uint8_t alert_code = CAPTEUR_NO_ERROR;
 
     for (int i = 0; i < 6; i++) {
         hc_sr04_init(&capteurs[i]);
@@ -98,7 +99,13 @@ void detect_alert() {
     }
 
     if (alert_code != CAPTEUR_NO_ERROR) {
-        xQueueSend(queueCapteur_rx, &alert_code, portMAX_DELAY);
+        if (queueCapteur_rx != NULL) {
+            if (xQueueSend(queueCapteur_rx, &alert_code, portMAX_DELAY) != pdPASS) {
+                ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
+            }
+        } else {
+            ESP_LOGE("Queue", "queueCapteur_rx is NULL");
+        }   
     }
 }
 

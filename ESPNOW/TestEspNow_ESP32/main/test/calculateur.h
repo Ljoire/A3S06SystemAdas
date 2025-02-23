@@ -48,7 +48,7 @@
  */
 #define CALCULATOR_QUEUE_LENGHT 15
 #define ALERT_DATA_FORMAT uint8_t
-#define CALCULATOR_STACK_SIZE 2
+#define CALCULATOR_STACK_SIZE 1024
 
 
 esp_err_t CalculatorTaskQueueInitiator(void);

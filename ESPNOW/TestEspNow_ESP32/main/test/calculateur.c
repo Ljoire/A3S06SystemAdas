@@ -34,18 +34,23 @@ QueueHandle_t queueESPNOW_tx = NULL;
 
 
 //Queue par lequel le calculateur reçoit des codes erreur 
-extern QueueHandle_t queueCapteur_rx;
+/*
 extern QueueHandle_t queueMoteur_rx;
 extern QueueHandle_t queueESPNOW_rx;
 // Queue par lesquelles le calculateur transmet les code erreur
 extern QueueHandle_t queueLCD_tx;
 extern QueueHandle_t queueMoteur_tx;
 extern QueueHandle_t queueESPNOW_tx;
-
+*/
 
 esp_err_t CalculatorTaskQueueInitiator(void){
     
-    queueCapteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+        queueCapteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+        if (queueCapteur_rx == NULL) {
+            ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
+            return ESP_FAIL;  // Si la création échoue, renvoyer une erreur
+        }
+
     queueMoteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     queueESPNOW_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
 
@@ -53,14 +58,14 @@ esp_err_t CalculatorTaskQueueInitiator(void){
     queueMoteur_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     queueESPNOW_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
 
-    xTaskCreate(task_calculateur,"task_calculator",CALCULATOR_STACK_SIZE,NULL,1,NULL);
+
 
     // Création des tâches
     if (xTaskCreate(task_calculateur, "task_calculator", CALCULATOR_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
         ESP_LOGE(TAG,"Erreur à la création de la taches calculator");
         return ESP_FAIL;
     }
-    //ESP_LOGI(TAG,"Création des taches du calculateur réussi");
+    ESP_LOGI(TAG,"Création des taches du calculateur réussi");
     return ESP_OK;
     
 }

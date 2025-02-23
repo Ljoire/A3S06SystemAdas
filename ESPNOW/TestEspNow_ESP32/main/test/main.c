@@ -34,21 +34,21 @@ esp_err_t ADASTaskQueueInitiator(void){
         ESP_LOGE(TAG, "Erreur à la création des tâches calculateur");
     }
 
-    if (xTaskCreate(sensor_task, "Sensor Task", 1024, NULL, 2, NULL) != pdPASS) {
+    if (xTaskCreate(sensor_task, "Sensor Task", 2048, NULL, 2, NULL) != pdPASS) {
         ESP_LOGE(TAG,"Erreur à la création de la taches de capteur");
         return ESP_FAIL;
     }
+    ESP_LOGE(TAG,"Création réussi");
 
-    ESP_LOGI(TAG,"Création réussi");
     return ESP_OK;
     
 }
 
 void app_main() {
 
-    ESP_LOGI(TAG, "Système de détection d'angle mort initialisé.");
-
+    
     esp_err_t ret = ADASTaskQueueInitiator();
+    ESP_LOGI(TAG, "Système de détection d'angle mort initialisé.");
     // Vérification du retour d'erreur
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "Initialisation des tâches et des queues réussie.");
