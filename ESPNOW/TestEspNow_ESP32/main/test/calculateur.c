@@ -104,7 +104,7 @@ bool ProcessEspNowData(void) {
         }
 
         // Effectuer un ET logique avec 0xC0 pour extraire les 2 bits de poids fort
-        int lcd_alert = espnow_data & 0xC0;
+        uint16_t lcd_alert = espnow_data;
         if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
             vTaskDelay(pdMS_TO_TICKS(300));
         }
@@ -170,17 +170,13 @@ bool ProcessCapteurData(void) {
             default:
             break;
         }
-        //si il y a une alerte alors on fait un envoie en 2 fois sinon
-        
-        if ((alert_data & 0xC0) == 0xC0) {
-            int lcd_alert = alert_data & 0xC0;
-            if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
-                    vTaskDelay(pdTICKS_TO_MS(300));
-                }
+        uint16_t lcd_alert = capteur_data;
+        if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
+                vTaskDelay(pdTICKS_TO_MS(300));
             }
         return true;
     }
-return false;
+    return false;
 }
         
 

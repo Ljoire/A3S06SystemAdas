@@ -153,7 +153,7 @@ esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine){
     }
     for(int i=0;i<LCD_ROWS;i++){
         //on ajoute LCD_ROWS pour vérifier le 0+4 ème bit
-        if (MaskLine & (1 << i + LCD2_ROWS)) {
+        if (MaskLine & (1 << (i + LCD2_ROWS))){
             distance++;
             continue;
         }
@@ -175,7 +175,7 @@ static void display_task(void *pvParameters) {
     lcd_backlight(I2C_NUM_1,LCD2_I2C_ADDR,true);
     lcdStdPrint(I2C_NUM_1,LCD2_I2C_ADDR);
 
-    uint8_t lcd_alert;
+    uint16_t lcd_alert;
     // un bit par ligne en partant du MSB si il est mis a 1 alors il y a une alerte d'affiché
     uint8_t MaskLine = 0x00; 
     while (1) {
@@ -188,9 +188,11 @@ static void display_task(void *pvParameters) {
                 vTaskDelay(pdMS_TO_TICKS(300));
                 break;
             case CAPTEUR_EEBL_MID:
-            case 
+            case ESPNOW_EEBL_MID:
                 lcd_set_cursor(I2C_NUM_1,LCD2_I2C_ADDR,0,4);
                 lcd_print(I2C_NUM_1,LCD2_I2C_ADDR,"Att. Ralentir !");
+                MaskLine = MaskLine + 0b00010000;
+                break;
             default:
                 break;
             }
