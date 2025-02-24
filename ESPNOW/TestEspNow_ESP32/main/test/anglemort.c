@@ -93,7 +93,7 @@ void detect_alert(hc_sr04_t *capteurs) {
     ESP_LOGI(TAG,"Le code renvoyé est :%d",alert_code);
     if (alert_code != CAPTEUR_NO_ERROR) {
         if (queueCapteur_rx != NULL) {
-            if (xQueueSend(queueCapteur_rx, &alert_code, portMAX_DELAY) != pdPASS) {
+            if (xQueueSend(queueCapteur_rx, &alert_code, pdMS_TO_TICKS(200)) != pdPASS) {
                 ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
             }
             ESP_LOGI(TAG,"envoie d'une info");

@@ -57,7 +57,7 @@
 #define CALCULATOR_QUEUE_LENGHT 15
 #define ALERT_DATA_FORMAT uint8_t
 #define DISTANCE_DATA_FORMAT uint16_t
-#define CALCULATOR_STACK_SIZE 1024
+#define CALCULATOR_STACK_SIZE 2048
 
 
 esp_err_t CalculatorTaskQueueInitiator(void);

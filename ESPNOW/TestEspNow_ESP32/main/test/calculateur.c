@@ -54,6 +54,10 @@ esp_err_t CalculatorTaskQueueInitiator(void){
     queueESPNOW_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     //distance en u16 donc != aux autres
     queueLCD_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(uint16_t));
+    if (queueLCD_tx == NULL) {
+        ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
+        return ESP_FAIL;  // Si la création échoue, renvoyer une erreur
+    }
     queueMoteur_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     if (queueMoteur_tx == NULL) {
         ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
@@ -127,7 +131,7 @@ bool ProcessCapteurData(void) {
         ESP_LOGE(TAG,"Message reçu correctement le code est %d",capteur_data);
         ALERT_DATA_FORMAT moteur_data = 0;
         ALERT_DATA_FORMAT espnow_data = capteur_data + 1;
-        ALERT_DATA_FORMAT alert_data = capteur_data = 0;
+        ALERT_DATA_FORMAT alert_data = capteur_data;
         switch (alert_data)
         {
         case CAPTEUR_EEBL_MID:
@@ -163,8 +167,6 @@ bool ProcessCapteurData(void) {
             } else {
                 ESP_LOGW(TAG, "queueMoteur_tx est pleine !");
             }
-        
-            
             break;      
         case CAPTEUR_FCW_HIGH:
             //mettre sonnerie low 
@@ -212,8 +214,9 @@ void task_calculateur(void *pvParameters) {
         if (retCapt && retEspNow == true){
             cptRAZ = 0;
         }
+        capteur_received = RESET_AFFICHAGE;
         if (cptRAZ == DELAY_FOR_SEND_RESET){
-            xQueueSend(queueLCD_tx,RESET_AFFICHAGE,pdMS_TO_TICKS(200));
+            xQueueSend(queueLCD_tx,&capteur_received,pdMS_TO_TICKS(200));
             //Envoie des distance juste après
         }
         vTaskDelay(pdMS_TO_TICKS(100));
