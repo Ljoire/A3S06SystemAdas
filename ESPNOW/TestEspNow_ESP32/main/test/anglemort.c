@@ -34,6 +34,9 @@ void hc_sr04_init(hc_sr04_t *sensor) {
     gpio_config(&io_conf);
 }
 
+
+
+
 uint16_t measure_distance_cm(hc_sr04_t *sensor) {
     gpio_set_level(sensor->trigger_pin, 1);
     ets_delay_us(10);
@@ -57,19 +60,9 @@ uint16_t measure_distance_cm(hc_sr04_t *sensor) {
 
 ALERT_DATA_FORMAT alert_code = CAPTEUR_NO_ERROR;
 
-void detect_alert() {
-    hc_sr04_t capteurs[] = {
-        {TRIGGER_GPIO_ARG, ECHO_GPIO_ARG},
-        {TRIGGER_GPIO_ARD, ECHO_GPIO_ARD},
-        {TRIGGER_GPIO_AV, ECHO_GPIO_AV},
-        {TRIGGER_GPIO_AVG, ECHO_GPIO_AVG},
-        {TRIGGER_GPIO_AVD, ECHO_GPIO_AVD},
-        {TRIGGER_GPIO_AR, ECHO_GPIO_AR}  
-    };
-
+void detect_alert(hc_sr04_t *capteurs) {
 
     for (int i = 0; i < 6; i++) {
-        hc_sr04_init(&capteurs[i]);
         global_distances[i] = measure_distance_cm(&capteurs[i]);
     }
 
@@ -110,9 +103,24 @@ void detect_alert() {
     }
 }
 
+
+
 void sensor_task(void *pvParameters) {
+    hc_sr04_t toto[] = {
+        {TRIGGER_GPIO_ARG, ECHO_GPIO_ARG},
+        {TRIGGER_GPIO_ARD, ECHO_GPIO_ARD},
+        {TRIGGER_GPIO_AV, ECHO_GPIO_AV},
+        {TRIGGER_GPIO_AVG, ECHO_GPIO_AVG},
+        {TRIGGER_GPIO_AVD, ECHO_GPIO_AVD},
+        {TRIGGER_GPIO_AR, ECHO_GPIO_AR}  
+    };
+
+    ESP_LOGI(TAG,"Initialisation des capteur");
+    for (int i = 0; i < CAPTEUR_NUMBER; i++) {
+        hc_sr04_init(&toto[i]);
+    }
     while (1) {
-        detect_alert();
+        detect_alert(&toto);
         vTaskDelay(pdMS_TO_TICKS(500)); 
     }
 }
