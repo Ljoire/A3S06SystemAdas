@@ -120,7 +120,9 @@ void sensor_task(void *pvParameters) {
         hc_sr04_init(&toto[i]);
     }
     while (1) {
+        ESP_LOGE(TAG,"Prend la main");
         detect_alert(&toto);
+        ESP_LOGE(TAG,"Rend la main");
         vTaskDelay(pdMS_TO_TICKS(500)); 
     }
 }

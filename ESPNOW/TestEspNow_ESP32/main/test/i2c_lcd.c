@@ -186,19 +186,22 @@ void display_task(void *pvParameters) {
                 vTaskDelay(pdMS_TO_TICKS(300));
                 break;
             }
-        lcd_alert = (uint8_t) lcd_alert;
-        switch(lcd_alert){
-            case DISTANCE_A_RECEVOIR:
-            case CAPTEUR_EEBL_MID:
-            case ESPNOW_EEBL_MID:
-                lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,4);
-                lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,"Att. Ralentir !");
-                MaskLine = MaskLine + 0b00010000;
-                break;
-            default:
-                break;
-            }
+            lcd_alert = (uint8_t) lcd_alert;
+            switch(lcd_alert){
+                case DISTANCE_A_RECEVOIR:
+                case CAPTEUR_EEBL_MID:
+                case ESPNOW_EEBL_MID:
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,4);
+                    lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,"Att. Ralentir !");
+                    MaskLine = MaskLine + 0b00010000;
+                    break;
+                default:
+                    break;
+                }
+                vTaskDelay(pdMS_TO_TICKS(200));
         }
-        vTaskDelay(pdMS_TO_TICKS(200));
+        else{
+            vTaskDelay(pdMS_TO_TICKS(200));
+        }
     }
 }
