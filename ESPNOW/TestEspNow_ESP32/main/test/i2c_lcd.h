@@ -159,3 +159,10 @@ esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr);
  * @return esp_err_t 
  */
 esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine);
+
+/**
+ * @brief Tâche d'affichage
+ * 
+ * @param pvParameters prend en paramèter
+ */
+void display_task(void *pvParameters);

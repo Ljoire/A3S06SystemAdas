@@ -4,15 +4,15 @@
 static const char *TAG = "LCD";
 // ################### PORT I2C LCD1 ET LCD2 ###################
 //LCD2
-static i2c_port_t i2c_port2 = I2C_NUM_1; // Utilisation du second port I2C
+static i2c_port_t PortI2c_20x4 = I2C_NUM_1; // Utilisation du second port I2C
 static uint8_t backlight_state = 0x08;   // État initial du rétroéclairage
 //LCD1 
-static i2c_port_t i2c_port = I2C_NUM_0;
+static i2c_port_t PortI2c_12x2 = I2C_NUM_0;
 
 // ################### CONFIGURATION LCD  ###################
 
-char *tableLCD1 = {"G  : xx cm","D   : xx cm"};
-char *tableLCD2 = {"AV : xx cm","AVG: xx cm","AVD: xx cm","AR : xx cm"};
+char *tableLCD1[] = {"G  : xx cm","D   : xx cm"};
+char *tableLCD2[] = {"AV : xx cm","AVG: xx cm","AVD: xx cm","AR : xx cm"};
 
 void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine) {
     
@@ -75,7 +75,7 @@ void lcd_set_cursor(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t row, uint8_t col
         static const uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54}; // Offsets pour LCD 4x20
         if (row >= LCD2_ROWS) row = LCD2_ROWS - 1;
         if (col >= LCD2_COLS) col = LCD2_COLS - 1;
-        lcd2_send_cmd(i2c_port, i2caddr, LCD2_SETDDRAMADDR | (col + row_offsets[row]));
+        lcd_send_cmd(i2c_port, i2caddr, LCD2_SETDDRAMADDR | (col + row_offsets[row]));
     }
     //Sur le LCD 16x2
     else{
@@ -126,14 +126,14 @@ esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr){
     //si on RAZ le 20x4
     if(i2caddr == LCD2_I2C_ADDR){
         for(int i = 0; i < LCD2_ROWS;i++){
-            lcd_set_cursor(I2C_NUM_1,LCD2_I2C_ADDR,i,0);
-            lcd_print(I2C_NUM_1,LCD2_I2C_ADDR,tableLCD2[i]);
+            lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,i,0);
+            lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableLCD2[i]);
         }
     }
     else{
         for(int i = 0; i < LCD_ROWS;i++){
-            lcd_set_cursor(I2C_NUM_1,LCD_I2C_ADDR,i,0);
-            lcd_print(I2C_NUM_1,LCD_I2C_ADDR,tableLCD1[i]);
+            lcd_set_cursor(PortI2c_20x4,LCD_I2C_ADDR,i,0);
+            lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableLCD1[i]);
         }
     }
     
@@ -147,8 +147,8 @@ esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine){
             distance++;
             continue;
         }
-        lcd_set_cursor(I2C_NUM_0,LCD2_I2C_ADDR,i,DISTANCE_RANGE_PRINT);
-        lcd_print(I2C_NUM_0,LCD2_I2C_ADDR,*distance);
+        lcd_set_cursor(PortI2c_12x2,LCD2_I2C_ADDR,i,DISTANCE_RANGE_PRINT);
+        lcd_print(PortI2c_12x2,LCD2_I2C_ADDR,*distance);
         distance++;
     }
     for(int i=0;i<LCD_ROWS;i++){
@@ -157,23 +157,23 @@ esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine){
             distance++;
             continue;
         }
-        lcd_set_cursor(I2C_NUM_1,LCD_I2C_ADDR,i,DISTANCE_RANGE_PRINT);
-        lcd_print(I2C_NUM_1,LCD_I2C_ADDR,*distance);
+        lcd_set_cursor(PortI2c_20x4,LCD_I2C_ADDR,i,DISTANCE_RANGE_PRINT);
+        lcd_print(PortI2c_20x4,LCD_I2C_ADDR,*distance);
         distance++;
     }
     return ESP_OK;
 }
 // Tâche d'affichage local
-static void display_task(void *pvParameters) {
+void display_task(void *pvParameters) {
 
 
-    lcd_init(I2C_NUM_0,LCD_I2C_ADDR,false);//LCD 16x2
-    lcd_backlight(I2C_NUM_0,LCD_I2C_ADDR,true);
-    lcdStdPrint(I2C_NUM_0,LCD_I2C_ADDR);
+    lcd_init(PortI2c_12x2,LCD_I2C_ADDR,false);//LCD 16x2
+    lcd_backlight(PortI2c_12x2,LCD_I2C_ADDR,true);
+    lcdStdPrint(PortI2c_12x2,LCD_I2C_ADDR);
 
-    lcd_init(I2C_NUM_1,LCD2_I2C_ADDR,true);//LCD 2Ox4
-    lcd_backlight(I2C_NUM_1,LCD2_I2C_ADDR,true);
-    lcdStdPrint(I2C_NUM_1,LCD2_I2C_ADDR);
+    lcd_init(PortI2c_20x4,LCD2_I2C_ADDR,true);//LCD 2Ox4
+    lcd_backlight(PortI2c_20x4,LCD2_I2C_ADDR,true);
+    lcdStdPrint(PortI2c_20x4,LCD2_I2C_ADDR);
 
     uint16_t lcd_alert;
     // un bit par ligne en partant du MSB si il est mis a 1 alors il y a une alerte d'affiché
@@ -181,21 +181,24 @@ static void display_task(void *pvParameters) {
     while (1) {
 
         if (xQueueReceive(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
-            switch (lcd_alert)
-            {
-            case DISTANCE_A_RECEVOIR:
-                lcdDistancePrint(lcd_alert,MaskLine);
+            if(lcd_alert == DISTANCE_A_RECEVOIR){
+                lcdDistancePrint(&lcd_alert,MaskLine);
                 vTaskDelay(pdMS_TO_TICKS(300));
                 break;
+            }
+        lcd_alert = (uint8_t) lcd_alert;
+        switch(lcd_alert){
+            case DISTANCE_A_RECEVOIR:
             case CAPTEUR_EEBL_MID:
             case ESPNOW_EEBL_MID:
-                lcd_set_cursor(I2C_NUM_1,LCD2_I2C_ADDR,0,4);
-                lcd_print(I2C_NUM_1,LCD2_I2C_ADDR,"Att. Ralentir !");
+                lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,4);
+                lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,"Att. Ralentir !");
                 MaskLine = MaskLine + 0b00010000;
                 break;
             default:
                 break;
             }
         }
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }

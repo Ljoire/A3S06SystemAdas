@@ -14,8 +14,7 @@
 #include "calculateur.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include "esp_log.h"
+
 static const char *TAG = "CALCULATEUR";
 /**
  * @brief initialisation des queues d'I/O et de la tache du calculateur
@@ -186,7 +185,7 @@ void task_calculateur(void *pvParameters) {
     //Variable d'accueil local
     ALERT_DATA_FORMAT espnow_data, luminosite_data, capteur_data[SENSOR_FRAME_LENGH];
     ALERT_DATA_FORMAT moteur_received, capteur_received;
-    uint16_t cptRAZ;
+    uint16_t cptRAZ = 0;
     while (1) {
 
         bool retCapt = ProcessCapteurData();
@@ -195,7 +194,7 @@ void task_calculateur(void *pvParameters) {
             cptRAZ ++;
         }
         if (retCapt && retEspNow == true){
-            cptRAZ = 0
+            cptRAZ = 0;
         }
         if (cptRAZ == DELAY_FOR_SEND_RESET){
             xQueueSend(queueLCD_tx,RESET_AFFICHAGE,portMAX_DELAY);

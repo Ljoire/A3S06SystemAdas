@@ -17,6 +17,8 @@
 #define TRIGGER_GPIO_AR   GPIO_NUM_32  // Capteur Arrière
 #define ECHO_GPIO_AR      GPIO_NUM_33
 
+#define CAPTEUR_NUMBER 5
+
 extern uint16_t global_distances[6];
 // Structure pour représenter un capteur
 typedef struct {

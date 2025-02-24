@@ -27,9 +27,9 @@ static const char *TAG = "MAIN";
  * @return ESP_NOK une erreur a été rencontré
  */
 esp_err_t ADASTaskQueueInitiator(void){
-
+    
     esp_err_t ret = CalculatorTaskQueueInitiator();
-
+    
     if (ret != ESP_OK){
         ESP_LOGE(TAG, "Erreur à la création des tâches calculateur");
     }
@@ -39,9 +39,12 @@ esp_err_t ADASTaskQueueInitiator(void){
         return ESP_FAIL;
     }
     ESP_LOGE(TAG,"Création réussi");
-
-    return ESP_OK;
     
+    if (xTaskCreate(display_task, "Display task", 2048, NULL, 3, NULL) != pdPASS) {
+        ESP_LOGE(TAG,"Erreur à la création de la taches d'affichage");
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 void app_main() {

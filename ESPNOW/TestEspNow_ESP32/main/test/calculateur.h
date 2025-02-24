@@ -1,14 +1,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-
+#include <string.h>
+#include "esp_log.h"
 
     /***** @brief Liste des entrée ****/
     /** @brief ESPNOW **/
 //EEBL
 #define ESPNOW_EEBL_MID 2
 #define ESPNOW_EEBL_HIGH 4
-#define ESPNOW_EEBL_HIGH 6
+#define ESPNOW_EEBL_CRIT 6
 
 #define ESPNOW_DNPW_G 12
 #define ESPNOW_DNPW_D 14
@@ -61,7 +62,7 @@
 
 esp_err_t CalculatorTaskQueueInitiator(void);
 
-static void task_calculateur(void *pvParameters);
+void task_calculateur(void *pvParameters);
 
 extern QueueHandle_t queueCapteur_rx;
 extern QueueHandle_t queueMoteur_rx;
