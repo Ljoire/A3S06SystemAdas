@@ -85,7 +85,7 @@ esp_err_t CalculatorTaskQueueInitiator(void){
 bool ProcessEspNowData(void) {
     ALERT_DATA_FORMAT espnow_data;
     
-    if (xQueueReceive(queueESPNOW_rx, &espnow_data, portMAX_DELAY) == pdTRUE) {
+    if (xQueueReceive(queueESPNOW_rx, &espnow_data, pdMS_TO_TICKS(100)) == pdTRUE) {
         ALERT_DATA_FORMAT DatatMoteur;
 
         switch (espnow_data) {
@@ -156,11 +156,12 @@ bool ProcessCapteurData(void) {
         case CAPTEUR_DNPW_G:
         case CAPTEUR_DNPW_D:
             ESP_LOGE(TAG, "Tentative d'envoi à queueMoteur_tx");
+            moteur_data = MOTEUR_AVANT_LENT;
             if (xQueueSend(queueMoteur_tx, &moteur_data, pdMS_TO_TICKS(100)) == pdTRUE) {
                 ESP_LOGE(TAG, "Envoyé à queueMoteur_tx");
                 if (xQueueSend(queueESPNOW_tx, &espnow_data, pdMS_TO_TICKS(100)) == pdTRUE) {
                     ESP_LOGE(TAG, "Envoyé à queueESPNOW_tx");
-                    vTaskDelay(pdMS_TO_TICKS(300));
+                    //vTaskDelay(pdMS_TO_TICKS(300));
                 } else {
                     ESP_LOGW(TAG, "queueESPNOW_tx est pleine !");
                 }
@@ -183,14 +184,15 @@ bool ProcessCapteurData(void) {
             }
             break;
             default:
-                ESP_LOGE(TAG,"Passage dans un aucun case");
+                ESP_LOGE(TAG,"Passage dans aucun case");
                 vTaskDelay(pdMS_TO_TICKS(200));
             break;
         }
         uint16_t lcd_alert = capteur_data;
         if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
-                vTaskDelay(pdTICKS_TO_MS(300));
+                //vTaskDelay(pdTICKS_TO_MS(300));
             }
+        ESP_LOGE(TAG,"envoie du code dans la tache LCD");
         return true;
     }
     return false;
@@ -207,7 +209,9 @@ void task_calculateur(void *pvParameters) {
     while (1) {
         ESP_LOGE(TAG,"Prend la main");
         bool retCapt = ProcessCapteurData();
+        ESP_LOGE(TAG,"nous sommes sortie de la fonctions");
         bool retEspNow = ProcessEspNowData(); 
+        ESP_LOGE(TAG,"Passage hors des boucles");
         if (retCapt && retEspNow == false){
             cptRAZ ++;
         }

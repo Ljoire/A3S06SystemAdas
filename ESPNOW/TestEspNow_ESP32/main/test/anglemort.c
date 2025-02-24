@@ -123,6 +123,7 @@ void sensor_task(void *pvParameters) {
         ESP_LOGE(TAG,"Prend la main");
         detect_alert(&toto);
         ESP_LOGE(TAG,"Rend la main");
-        vTaskDelay(pdMS_TO_TICKS(500)); 
+        vTaskDelay(pdMS_TO_TICKS(1000)); 
+        ESP_LOGE(TAG,"Reprend la main");
     }
 }
