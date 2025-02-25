@@ -9,6 +9,15 @@
 //################################# PARAMETRES UTILE
 // affichage des distane
 #define DISTANCE_RANGE_PRINT 5
+//################################# MASQUAGE DES LIGNES   #################################
+//LCD 20x4
+#define LCD_20X4_L1 0b10000000
+#define LCD_20X4_L2 0b01000000
+#define LCD_20X4_L3 0b00100000
+#define LCD_20X4_L4 0b00010000 
+//LCD 16x2
+#define LCD_16X2_L1 0b00001000 
+#define LCD_16X2_L2 0b00000100 
 //################################# PARAMETRES DE CONFIGURATION DU LCD 20X04   #################################
 
 #ifndef I2C_LCD_H
