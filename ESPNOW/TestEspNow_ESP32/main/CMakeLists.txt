@@ -5,7 +5,8 @@ set(USE_TEST_CODE ON)  # Mets à OFF pour compiler le programme principal
 if(USE_TEST_CODE)
     set(SRCS "test/anglemort.c" 
              "test/main.c"
-             "test/calculateur.c")
+             "test/calculateur.c"
+             "test/BH1750.C")
     set(INCLUDE_DIRS "." "include" "test")
 else()
     set(SRCS "calculateur.c" 
@@ -13,7 +14,8 @@ else()
              "hc_sr04.c"
              "i2c_lcd.c"
              "i2c_lcd2.c"
-             "espnow_src.c")
+             "espnow_src.c"
+             "BH1750.c")
     set(INCLUDE_DIRS "." "include" "test")
 endif()
 
