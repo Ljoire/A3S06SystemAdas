@@ -102,7 +102,7 @@ void lcd_set_cursor(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t row, uint8_t col
     }
     //Sur le LCD 16x2
     else{
-        ESP_LOGE(TAG,"mise du curseur sur le LCD 16x2");
+        //ESP_LOGE(TAG,"mise du curseur sur le LCD 16x2");
         static const uint8_t row_offsets[] = {0x00, 0x40};
         if (row >= LCD_ROWS) row = LCD_ROWS - 1;
         if (col >= LCD_COLS) col = LCD_COLS - 1;
@@ -247,14 +247,17 @@ void display_task(void *pvParameters) {
                     lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,4);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_FREIN_URGENCE]);
                     MaskLine = MaskLine + LCD_20X4_L4;
+                    break;
                 case CAPTEUR_BSW_GAUCHE:
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,2);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,1,0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_ANGLE_MORT_G]);
                     MaskLine = MaskLine + LCD_20X4_L2;
+                    break;
                 case ESPNOW_BSW_G:
                     lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,2);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_PRESENCE_AG]);
-                    MaskLine = MaskLine + LCD_20X4_L2;          
+                    MaskLine = MaskLine + LCD_20X4_L2;        
+                    break;  
                 case CAPTEUR_BSW_DROITE:
                     lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,2);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_ANGLE_MORT_D]);
@@ -266,12 +269,12 @@ void display_task(void *pvParameters) {
                     MaskLine = MaskLine + LCD_20X4_L2;
                     break;
                 case CAPTEUR_DNPW_G:
-
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,1);
+                    ESP_LOGE(TAG,"Dans le case DNPW_G");                                                     
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,1,0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_DEPASSEMENT]);
                     MaskLine = MaskLine + LCD_20X4_L1;
                     
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,2);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,2,0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_IMPOSSIBLE]);
                     MaskLine = MaskLine + LCD_20X4_L2;
 
@@ -279,7 +282,7 @@ void display_task(void *pvParameters) {
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DNPW]);
                     MaskLine = MaskLine + LCD_16X2_L1;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,1);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,1,0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_GAUCHE_BLOQUE]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
@@ -292,12 +295,13 @@ void display_task(void *pvParameters) {
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_GAUCHE_BLOQUE]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
-                case CAPTEUR_DNPW_D:                                          
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,1);
+                case CAPTEUR_DNPW_D:   
+                    ESP_LOGE(TAG,"Dans le case DNPW_D");                                       
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,1,0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_DEPASSEMENT]);
                     MaskLine = MaskLine + LCD_20X4_L1;
                     
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,2);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,2,0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_IMPOSSIBLE]);
                     MaskLine = MaskLine + LCD_20X4_L2;
 
@@ -305,7 +309,7 @@ void display_task(void *pvParameters) {
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DNPW]);
                     MaskLine = MaskLine + LCD_16X2_L1;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,1);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,1,0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DROITE_BLOQUE]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;

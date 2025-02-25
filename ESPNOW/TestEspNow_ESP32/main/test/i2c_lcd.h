@@ -7,7 +7,7 @@
 
 
 //################################# PARAMETRES UTILE
-// affichage des distane
+// Colonne pour l'affichage des distane
 #define DISTANCE_RANGE_PRINT 5
 
 //################################# Accès aux tableaux    #################################
