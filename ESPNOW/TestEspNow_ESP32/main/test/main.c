@@ -46,6 +46,12 @@ esp_err_t ADASTaskQueueInitiator(void){
         ESP_LOGE(TAG,"Erreur à la création de la taches d'affichage");
         return ESP_FAIL;
     }
+
+    if (xTaskCreate(luminosity_task, "Luminosity Task", 2048, NULL, 6, NULL) != pdPASS) {
+        ESP_LOGE(TAG,"Erreur à la création de la taches de capteur");
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 }
 
@@ -61,21 +67,5 @@ void app_main() {
         ESP_LOGE(TAG, "Échec de l'initialisation des tâches et des queues !");
     }
 
-    
-    if (xTaskCreate(sensor_task, "Sensor Task", 2048, NULL, 2, NULL) != pdPASS) {
-        ESP_LOGE(TAG,"Erreur à la création de la taches de capteur");
-        //return ESP_FAIL;
-    }
-    if (xTaskCreate(luminosity_task, "Luminosity Task", 2048, NULL, 6, NULL) != pdPASS) {
-        ESP_LOGE(TAG,"Erreur à la création de la taches de capteur");
-        //return ESP_FAIL;
-    }
     ESP_LOGE(TAG,"Création réussi");
-    /*
-    if (xTaskCreate(display_task, "Display task", 3072, NULL, 3, NULL) != pdPASS) {
-        ESP_LOGE(TAG,"Erreur à la création de la taches d'affichage");
-        return ESP_FAIL;
-    }
-        */
-    
 }

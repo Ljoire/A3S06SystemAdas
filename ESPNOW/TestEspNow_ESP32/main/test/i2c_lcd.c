@@ -7,7 +7,7 @@ static const char *TAG = "LCD";
 static i2c_port_t PortI2c_20x4 = I2C_NUM_0; // Utilisation du second port I2C
 static uint8_t backlight_state = 0x08;   // État initial du rétroéclairage
 //LCD1 
-static i2c_port_t PortI2c_16x2 = I2C_NUM_1;
+static i2c_port_t PortI2c_16x2 = I2C_NUM_0;
 
 // ################### CONFIGURATION LCD  ###################
 
@@ -178,7 +178,7 @@ esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine){
 // Tâche d'affichage local
 
 esp_err_t lcd_initialization(void){
-    lcd_init(PortI2c_16x2,LCD2_I2C_ADDR,true);//LCD 16x2
+    lcd_init(PortI2c_16x2,LCD2_I2C_ADDR,false);//LCD 16x2
     lcd_backlight(PortI2c_16x2,LCD_I2C_ADDR,true);
     ESP_LOGE(TAG,"Backlight allumé");
     lcdStdPrint(PortI2c_16x2,LCD_I2C_ADDR,tableLCD1);

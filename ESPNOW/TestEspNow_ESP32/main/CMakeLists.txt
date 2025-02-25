@@ -6,7 +6,8 @@ if(USE_TEST_CODE)
     set(SRCS "test/anglemort.c" 
              "test/main.c"
              "test/calculateur.c"
-             "test/i2c_lcd.c")
+             "test/i2c_lcd.c"
+             "test/BH1750.c")
     set(INCLUDE_DIRS "." "include" "test")
 else()
     set(SRCS "calculateur.c" 
