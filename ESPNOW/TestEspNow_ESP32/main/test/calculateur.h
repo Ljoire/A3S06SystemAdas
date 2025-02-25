@@ -67,11 +67,13 @@ void task_calculateur(void *pvParameters);
 extern QueueHandle_t queueCapteur_rx;
 extern QueueHandle_t queueMoteur_rx;
 extern QueueHandle_t queueESPNOW_rx;
+extern QueueHandle_t queueluminosité_rx;
 
 // Queue par lesquelles le calculateur transmet les code erreur
 extern QueueHandle_t queueLCD_tx;
 extern QueueHandle_t queueMoteur_tx;
 extern QueueHandle_t queueESPNOW_tx;
+extern QueueHandle_t queueluminosité_tx;
 
 /**
  * @brief Fonction de traitement des alertes reçu par l'ESPNOW

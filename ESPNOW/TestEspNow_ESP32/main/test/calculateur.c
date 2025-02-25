@@ -26,10 +26,12 @@ static const char *TAG = "CALCULATEUR";
 QueueHandle_t queueCapteur_rx = NULL;
 QueueHandle_t queueMoteur_rx = NULL;
 QueueHandle_t queueESPNOW_rx = NULL;
+QueueHandle_t queueluminosité_rx = NULL;
 
 QueueHandle_t queueLCD_tx = NULL;
 QueueHandle_t queueMoteur_tx = NULL;
 QueueHandle_t queueESPNOW_tx = NULL;
+QueueHandle_t queueluminosité_tx = NULL;
 
 
 //Queue par lequel le calculateur reçoit des codes erreur 
@@ -52,6 +54,7 @@ esp_err_t CalculatorTaskQueueInitiator(void){
 
     queueMoteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     queueESPNOW_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    queueluminosité_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT, sizeof(ALERT_DATA_FORMAT));
     //distance en u16 donc != aux autres
     queueLCD_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(uint16_t));
     if (queueLCD_tx == NULL) {
@@ -65,6 +68,11 @@ esp_err_t CalculatorTaskQueueInitiator(void){
     }
     queueESPNOW_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     if (queueESPNOW_tx == NULL) {
+        ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
+        return ESP_FAIL;  // Si la création échoue, renvoyer une erreur
+    }
+    queueluminosité_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    if (queueluminosité_tx == NULL) {
         ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
         return ESP_FAIL;  // Si la création échoue, renvoyer une erreur
     }
@@ -124,6 +132,15 @@ bool ProcessEspNowData(void) {
 
     return false; // Aucune donnée à traiter
 }
+bool ProcessLuminositeData(void){
+    ALERT_DATA_FORMAT luminosite_data = 0;
+    if (xQueueReceive(queueluminosité_rx, &luminosite_data, portMAX_DELAY) == pdTRUE) {
+        ESP_LOGE(TAG,"Message reçu correctement le code est %d",luminosite_data);
+        return true;
+    }
+    return false;
+}
+
 
 bool ProcessCapteurData(void) {
     ALERT_DATA_FORMAT capteur_data = 0;

@@ -7,6 +7,8 @@
 
 static const char *TAG = "BH1750";
 
+extern QueueHandle_t queueluminosité_rx; 
+
 void bh1750_init() {
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
@@ -53,10 +55,18 @@ void luminosity_task(void *pvParameters) {
         if (lux >= HIGH_BEAM_THRESHOLD) {
             alert = ALERT_CODE;
             ESP_LOGW(TAG, "Alerte! Pleins phares détectés, code: %u", alert);
+
+            if (queueluminosité_rx != NULL) {
+                if (xQueueSend(queueluminosité_rx, &alert, pdMS_TO_TICKS(200)) != pdPASS) {
+                    ESP_LOGE(TAG, "Échec de l'envoi de l'alerte à queueluminosité_rx");
+                } else {
+                    ESP_LOGI(TAG, "Alerte envoyée à la file d'attente");
+                }
+            } else {
+                ESP_LOGE(TAG, "queueluminosité_rx est NULL");
+            }
         }
         
         vTaskDelay(pdMS_TO_TICKS(1000));  
     }
 }
-
-
