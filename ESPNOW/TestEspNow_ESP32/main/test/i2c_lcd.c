@@ -52,6 +52,7 @@ void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine) {
         i2c_master_write_to_device(i2c_port, i2caddr, buf, 2, 1000 / portTICK_PERIOD_MS);
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
+    ESP_LOGE(TAG,"Allumage du LCD");
 
     // Configuration du LCD
     lcd_send_cmd(i2c_port,i2caddr,LCD_FUNCTIONSET | 0x08);        // 4-bit, 2 lignes, 5x8 pixels
@@ -121,8 +122,7 @@ void lcd_print(i2c_port_t i2c_port,uint8_t i2caddr,const char* str) {
 
 esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr){
     //chaine d'affichage
-    return ESP_OK;
-
+    
     //si on RAZ le 20x4
     if(i2caddr == LCD2_I2C_ADDR){
         for(int i = 0; i < LCD2_ROWS;i++){
@@ -136,6 +136,7 @@ esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr){
             lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableLCD1[i]);
         }
     }
+    return ESP_OK;
     
 }
 
