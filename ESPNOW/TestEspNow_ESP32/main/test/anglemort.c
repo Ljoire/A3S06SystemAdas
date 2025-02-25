@@ -96,7 +96,7 @@ void detect_alert(hc_sr04_t *capteurs) {
             if (xQueueSend(queueCapteur_rx, &alert_code, pdMS_TO_TICKS(200)) != pdPASS) {
                 ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
             }
-            ESP_LOGI(TAG,"envoie d'une info");
+            //ESP_LOGI(TAG,"envoie d'une info");
         } else {
             ESP_LOGE("Queue", "queueCapteur_rx is NULL");
         }   
@@ -120,10 +120,10 @@ void sensor_task(void *pvParameters) {
         hc_sr04_init(&toto[i]);
     }
     while (1) {
-        ESP_LOGE(TAG,"Prend la main");
+        //ESP_LOGE(TAG,"Prend la main");
         detect_alert(&toto);
-        ESP_LOGE(TAG,"Rend la main");
+        //ESP_LOGE(TAG,"Rend la main");
         vTaskDelay(pdMS_TO_TICKS(1000)); 
-        ESP_LOGE(TAG,"Reprend la main");
+        //ESP_LOGE(TAG,"Reprend la main");
     }
 }

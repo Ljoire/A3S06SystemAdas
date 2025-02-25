@@ -84,6 +84,8 @@
 #endif // I2C_LCD2_H
 
 
+//char *tableLCD1[];
+//char *tableLCD2[];
 
 /**
  * @brief Fonction pour l'initalisation des 2 LCD. 
@@ -143,13 +145,14 @@ static void lcd_send_cmd(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t cmd);
 void lcd_print(i2c_port_t i2c_port,uint8_t i2caddr,const char* str);
 
 /**
- * @brief RAZ de l'affichage
+ * @brief Affichage standard de l'affichage sans erreur
  * 
- * @param i2c_port Port i2c utilisé par l'ESP32 (I2C_NUM_0 ou I2C_NUM_1)
- * @param i2caddr Adresse de l'appareil LCD_I2C_ADDR ou LCD2_I2C_ADDR
- * @return esp_err_t ESP_OK ou ESP_NOK selon l'éxécution de la fonction
+ * @param i2c_port port i2c du LCD
+ * @param i2caddr Adresse i2c du LCD
+ * @param tableLCD char *[] car nous appelons un tbaleau de chaine de caractères. Peut se traduire en char ** tableeLCD
+ * @return esp_err_t ESP_OK réussi ESP_FAIL raté 
  */
-esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr);
+esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr,char * tableLCD[]);
 
 /**
  * @brief Affichage des distances sur l'ensemble des lignes à l'exception de celles avec une erreur affiché
@@ -166,3 +169,5 @@ esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine);
  * @param pvParameters prend en paramèter
  */
 void display_task(void *pvParameters);
+
+

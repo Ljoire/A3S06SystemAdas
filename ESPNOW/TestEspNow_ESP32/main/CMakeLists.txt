@@ -6,7 +6,7 @@ if(USE_TEST_CODE)
     set(SRCS "test/anglemort.c" 
              "test/main.c"
              "test/calculateur.c"
-             "test/BH1750.C")
+             "test/i2c_lcd.c")
     set(INCLUDE_DIRS "." "include" "test")
 else()
     set(SRCS "calculateur.c" 
@@ -14,8 +14,7 @@ else()
              "hc_sr04.c"
              "i2c_lcd.c"
              "i2c_lcd2.c"
-             "espnow_src.c"
-             "BH1750.c")
+             "espnow_src.c")
     set(INCLUDE_DIRS "." "include" "test")
 endif()
 
