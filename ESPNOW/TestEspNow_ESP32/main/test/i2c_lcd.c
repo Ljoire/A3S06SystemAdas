@@ -18,22 +18,13 @@ void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine) {
     
     i2c_config_t conf;  // Déclaration avant le if
 
-    if (FourOrTwoLine) {
-        // Configuration I2C pour LCD 12x2
-        conf.mode = I2C_MODE_MASTER;
-        conf.sda_io_num = GPIO_NUM_21;
-        conf.scl_io_num = GPIO_NUM_22;
-    } else {
-        // Configuration I2C pour LCD 16x4
-        conf.mode = I2C_MODE_MASTER;
-        conf.sda_io_num = GPIO_NUM_32;  // Nouvelle broche SDA
-        conf.scl_io_num = GPIO_NUM_33;  // Nouvelle broche SCL
-    }
-
-    // Paramètres communs aux deux cas
+    // Configuration I2C pour LCD 12x2
+    conf.mode = I2C_MODE_MASTER;
+    conf.sda_io_num = GPIO_NUM_21;
+    conf.scl_io_num = GPIO_NUM_22;
     conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = 50000;
+    conf.master.clk_speed = 100000;
 
     ESP_ERROR_CHECK(i2c_param_config(i2c_port, &conf));
     ESP_ERROR_CHECK(i2c_driver_install(i2c_port, conf.mode, 0, 0, 0));
@@ -78,7 +69,7 @@ void lcd_backlight(i2c_port_t i2c_port,uint8_t i2caddr,bool on) {
 // ################### ECRITURE DE COMMANDE ET AFFICHAGE ###################
 
 void lcd_set_cursor(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t row, uint8_t col) {
-    if(i2c_port == PortI2c_20x4){
+    if(i2caddr == LCD2_I2C_ADDR){
         static const uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54}; // Offsets pour LCD 4x20
         if (row >= LCD2_ROWS) row = LCD2_ROWS - 1;
         if (col >= LCD2_COLS) col = LCD2_COLS - 1;
@@ -131,7 +122,7 @@ esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr,char * tableLCD[]){
     //chaine d'affichage
     
     //si on RAZ le 20x4
-    if(i2c_port == PortI2c_20x4){
+    if(i2caddr == LCD2_I2C_ADDR){
         ESP_LOGE(TAG,"affichage du 20x4");
         for(int i = 0; i < LCD2_ROWS;i++){
             lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,i,0);
@@ -178,7 +169,7 @@ esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine){
 // Tâche d'affichage local
 
 esp_err_t lcd_initialization(void){
-    lcd_init(PortI2c_16x2,LCD2_I2C_ADDR,false);//LCD 16x2
+    lcd_init(PortI2c_16x2,LCD_I2C_ADDR,true);//LCD 16x2
     lcd_backlight(PortI2c_16x2,LCD_I2C_ADDR,true);
     ESP_LOGE(TAG,"Backlight allumé");
     lcdStdPrint(PortI2c_16x2,LCD_I2C_ADDR,tableLCD1);
