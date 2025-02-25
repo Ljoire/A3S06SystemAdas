@@ -4,10 +4,10 @@
 static const char *TAG = "LCD";
 // ################### PORT I2C LCD1 ET LCD2 ###################
 //LCD2
-static i2c_port_t PortI2c_20x4 = I2C_NUM_1; // Utilisation du second port I2C
+static i2c_port_t PortI2c_20x4 = I2C_NUM_0; // Utilisation du second port I2C
 static uint8_t backlight_state = 0x08;   // État initial du rétroéclairage
 //LCD1 
-static i2c_port_t PortI2c_12x2 = I2C_NUM_0;
+static i2c_port_t PortI2c_12x2 = I2C_NUM_1;
 
 // ################### CONFIGURATION LCD  ###################
 
@@ -106,7 +106,7 @@ static esp_err_t lcd_write_byte(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t cmd,
 }
 
 static void lcd_send_cmd(i2c_port_t i2c_port,uint8_t i2caddr,uint8_t cmd) {
-    lcd_write_byte(i2c_port,i2caddr,cmd, false);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(lcd_write_byte(i2c_port,i2caddr,cmd, false));
     if (cmd == LCD_CLEARDISPLAY || cmd == LCD_RETURNHOME) {
         vTaskDelay(2 / portTICK_PERIOD_MS);
     } else {
@@ -168,13 +168,15 @@ esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine){
 void display_task(void *pvParameters) {
 
 
-    lcd_init(PortI2c_12x2,LCD_I2C_ADDR,false);//LCD 16x2
+    lcd_init(PortI2c_12x2,LCD2_I2C_ADDR,false);//LCD 16x2
     lcd_backlight(PortI2c_12x2,LCD_I2C_ADDR,true);
-    lcdStdPrint(PortI2c_12x2,LCD_I2C_ADDR);
+    //lcdStdPrint(PortI2c_12x2,LCD_I2C_ADDR);
+    ESP_LOGE(TAG,"init 1 OK");
 
-    lcd_init(PortI2c_20x4,LCD2_I2C_ADDR,true);//LCD 2Ox4
+    lcd_init(PortI2c_20x4,LCD_I2C_ADDR,true);//LCD 2Ox4
     lcd_backlight(PortI2c_20x4,LCD2_I2C_ADDR,true);
-    lcdStdPrint(PortI2c_20x4,LCD2_I2C_ADDR);
+    //lcdStdPrint(PortI2c_20x4,LCD2_I2C_ADDR);
+    ESP_LOGE(TAG,"init 2 OK");
 
     uint16_t lcd_alert;
     // un bit par ligne en partant du MSB si il est mis a 1 alors il y a une alerte d'affiché
@@ -182,6 +184,7 @@ void display_task(void *pvParameters) {
     while (1) {
 
         if (xQueueReceive(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
+            ESP_LOGE(TAG,"La queue dépile");
             if(lcd_alert == DISTANCE_A_RECEVOIR){
                 lcdDistancePrint(&lcd_alert,MaskLine);
                 vTaskDelay(pdMS_TO_TICKS(300));

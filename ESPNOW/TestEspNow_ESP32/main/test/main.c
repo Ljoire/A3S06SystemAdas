@@ -41,7 +41,7 @@ esp_err_t ADASTaskQueueInitiator(void){
     }
     ESP_LOGE(TAG,"Création réussi");
     
-    if (xTaskCreate(display_task, "Display task", 2048, NULL, 3, NULL) != pdPASS) {
+    if (xTaskCreate(display_task, "Display task", 3072, NULL, 3, NULL) != pdPASS) {
         ESP_LOGE(TAG,"Erreur à la création de la taches d'affichage");
         return ESP_FAIL;
     }
