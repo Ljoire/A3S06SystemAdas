@@ -14,7 +14,7 @@ static i2c_port_t PortI2c_16x2 = I2C_NUM_0;
 char *tableLCD1[] = {"G  : xxx cm","D  : xxx cm"};
 char *tableLCD2[] = {"AV : xxx cm","AVG: xxx cm","AVD: xxx cm","AR : xxx cm"};
 
-void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine) {
+void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool is_configured) {
     
     i2c_config_t conf;  // Déclaration avant le if
 
@@ -26,8 +26,10 @@ void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine) {
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
     conf.master.clk_speed = 100000;
 
-    ESP_ERROR_CHECK(i2c_param_config(i2c_port, &conf));
-    ESP_ERROR_CHECK(i2c_driver_install(i2c_port, conf.mode, 0, 0, 0));
+    if(!is_configured){        
+        ESP_ERROR_CHECK(i2c_param_config(i2c_port, &conf));
+        ESP_ERROR_CHECK(i2c_driver_install(i2c_port, conf.mode, 0, 0, 0));
+    }
 
     // Attendre que le LCD soit prêt
     vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -169,17 +171,17 @@ esp_err_t lcdDistancePrint(uint16_t *distance,uint8_t MaskLine){
 // Tâche d'affichage local
 
 esp_err_t lcd_initialization(void){
-    lcd_init(PortI2c_16x2,LCD_I2C_ADDR,true);//LCD 16x2
+    lcd_init(PortI2c_16x2,LCD_I2C_ADDR,false);//LCD 16x2
     lcd_backlight(PortI2c_16x2,LCD_I2C_ADDR,true);
     ESP_LOGE(TAG,"Backlight allumé");
     lcdStdPrint(PortI2c_16x2,LCD_I2C_ADDR,tableLCD1);
     ESP_LOGE(TAG,"init 1 OK");
-/*
-    lcd_init(PortI2c_20x4,LCD_I2C_ADDR,true);//LCD 2Ox4
+
+    lcd_init(PortI2c_20x4,LCD2_I2C_ADDR,true);//LCD 2Ox4
     lcd_backlight(PortI2c_20x4,LCD2_I2C_ADDR,true);
     lcdStdPrint(PortI2c_20x4,LCD2_I2C_ADDR,tableLCD2);
     ESP_LOGE(TAG,"init 2 OK");
-*/
+
     return ESP_OK;
 }
 
