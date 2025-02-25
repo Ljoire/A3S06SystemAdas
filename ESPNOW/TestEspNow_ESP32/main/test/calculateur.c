@@ -24,7 +24,7 @@ static const char *TAG = "CALCULATEUR";
  * @brief liste des queue d'entrées sorties 
  */
 QueueHandle_t queueCapteur_rx = NULL;
-QueueHandle_t queueMoteur_rx = NULL;
+QueueHandle_t queueLuminosite_rx = NULL;
 QueueHandle_t queueESPNOW_rx = NULL;
 
 QueueHandle_t queueLCD_tx = NULL;
@@ -44,20 +44,28 @@ extern QueueHandle_t queueESPNOW_tx;
 
 esp_err_t CalculatorTaskQueueInitiator(void){
     
-        queueCapteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
-        if (queueCapteur_rx == NULL) {
-            ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
-            return ESP_FAIL;  // Si la création échoue, renvoyer une erreur
-        }
+    //** ##################### QUEUE DE RECEPTION PDV CALCULATEUR ##################### */
+   
+    queueCapteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    if (queueCapteur_rx == NULL) {
+        ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
+        return ESP_FAIL;  // Si la création échoue, renvoyer une erreur
+    }
 
-    queueMoteur_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    queueLuminosite_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
+    if (queueLuminosite_rx == NULL) {
+        ESP_LOGE("Queue", "Failed to create queueLuminosite_rx");
+        return ESP_FAIL;  // Si la création échoue, renvoyer une erreur
+    }
     queueESPNOW_rx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     //distance en u16 donc != aux autres
     queueLCD_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(uint16_t));
     if (queueLCD_tx == NULL) {
-        ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
+        ESP_LOGE("Queue", "Failed to create queueLCD_tx");
         return ESP_FAIL;  // Si la création échoue, renvoyer une erreur
     }
+
+    //** ##################### QUEUE DE TRANSMISSION PDV CALCULATEUR ##################### */
     queueMoteur_tx = xQueueCreate(CALCULATOR_QUEUE_LENGHT,sizeof(ALERT_DATA_FORMAT));
     if (queueMoteur_tx == NULL) {
         ESP_LOGE("Queue", "Failed to create queueCapteur_rx");
@@ -127,7 +135,7 @@ bool ProcessEspNowData(void) {
 
 bool ProcessCapteurData(void) {
     ALERT_DATA_FORMAT capteur_data = 0;
-    if (xQueueReceive(queueCapteur_rx, &capteur_data, portMAX_DELAY) == pdTRUE) {
+    if (xQueueReceive(queueCapteur_rx, &capteur_data, pdMS_TO_TICKS(100)) == pdTRUE) {
         ESP_LOGE(TAG,"Message reçu correctement le code est %d",capteur_data);
         ALERT_DATA_FORMAT moteur_data = 0;
         ALERT_DATA_FORMAT espnow_data = capteur_data + 1;
@@ -198,8 +206,32 @@ bool ProcessCapteurData(void) {
     return false;
 }
         
+bool ProcessLuminositeData(void){
+    ALERT_DATA_FORMAT LuminositeData = 0;
+    if (xQueueReceive(queueLuminosite_rx, &LuminositeData, pdMS_TO_TICKS(100)) == pdTRUE) {
+        ESP_LOGE(TAG,"Message reçu correctement le code est %d",LuminositeData);
+        ALERT_DATA_FORMAT espnow_data = LuminositeData + 1;    
+        switch (LuminositeData)
+        {
+        case LUMINOSITE_PLEIN_PHARE:
+            if (queueESPNOW_tx != NULL) {
+                if (xQueueSend(queueESPNOW_tx, &espnow_data, pdMS_TO_TICKS(200)) != pdPASS) {
+                    ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
+                }
+                //ESP_LOGI(TAG,"envoie d'une info");
+            } else {
+                ESP_LOGE("Queue", "queueCapteur_rx is NULL");
+            }
+            break;
 
-
+        default:
+            ESP_LOGE(TAG,"Réception d'un code n'ayant pas de lien avec une alerte");
+            break;
+        }
+        return true;
+    }
+    return false;
+}
 
 void task_calculateur(void *pvParameters) {
     //Variable d'accueil local

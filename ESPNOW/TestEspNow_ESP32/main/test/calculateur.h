@@ -11,10 +11,17 @@
 #define ESPNOW_EEBL_HIGH 4
 #define ESPNOW_EEBL_CRIT 6
 
+//BSW
+#define ESPNOW_BSW_G 8
+#define ESPNOW_BSW_D 10
+
+//DNPWN
 #define ESPNOW_DNPW_G 12
 #define ESPNOW_DNPW_D 14
 #define ESPNOW_FCW_CRIT 19
 
+//Plein phare
+#define ESPNOW_PLEIN_PHARE 21
 
     /** @brief capteur **/
 #define CAPTEUR_NO_ERROR 0
@@ -32,9 +39,15 @@
 #define CAPTEUR_FCW_MID 15
 #define CAPTEUR_FCW_HIGH 16
 #define CAPTEUR_FCW_CRIT 18
+
+    /** @brief LUMINOSITE */
+#define LUMINOSITE_PLEIN_PHARE 20 
+
 //Trame du capteur [Code Alerte, Distance1, Distance2,Distance3,Distance4,Distance5,Distance6]
 #define SENSOR_FRAME_LENGH 6 
 //en comptant le 0
+
+
     /***** @brief Liste des sortie ****/
     /** @brief Sortie Moteur **/
 #define MOTEUR_AVANT_LENT 2
@@ -65,7 +78,7 @@ esp_err_t CalculatorTaskQueueInitiator(void);
 void task_calculateur(void *pvParameters);
 
 extern QueueHandle_t queueCapteur_rx;
-extern QueueHandle_t queueMoteur_rx;
+extern QueueHandle_t queueLuminosite_rx;
 extern QueueHandle_t queueESPNOW_rx;
 
 // Queue par lesquelles le calculateur transmet les code erreur
