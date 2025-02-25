@@ -11,8 +11,8 @@ static i2c_port_t PortI2c_16x2 = I2C_NUM_1;
 
 // ################### CONFIGURATION LCD  ###################
 
-char *tableLCD1[] = {"G  : xx cm","D   : xx cm"};
-char *tableLCD2[] = {"AV : xx cm","AVG: xx cm","AVD: xx cm","AR : xx cm"};
+char *tableLCD1[] = {"G  : xxx cm","D  : xxx cm"};
+char *tableLCD2[] = {"AV : xxx cm","AVG: xxx cm","AVD: xxx cm","AR : xxx cm"};
 
 void lcd_init(i2c_port_t i2c_port,uint8_t i2caddr,bool FourOrTwoLine) {
     
@@ -144,7 +144,7 @@ esp_err_t lcdStdPrint(i2c_port_t i2c_port,uint8_t i2caddr,char * tableLCD[]){
             ESP_LOGE(TAG,"affichage du 16x2 le curseur va aller sur la ligne %d",i);
             lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,i,0);
             ESP_LOGE(TAG,"on print sur le LCD");
-            //lcd_print(PortI2c_16x2,LCD_I2C_ADDR,tableLCD[i]);
+            lcd_print(PortI2c_16x2,LCD_I2C_ADDR,tableLCD[i]);
         }
     }
     return ESP_OK;
