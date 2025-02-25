@@ -140,14 +140,6 @@ bool ProcessEspNowData(void) {
 
     return false; // Aucune donnée à traiter
 }
-bool ProcessLuminositeData(void){
-    ALERT_DATA_FORMAT luminosite_data = 0;
-    if (xQueueReceive(queueluminosité_rx, &luminosite_data, portMAX_DELAY) == pdTRUE) {
-        ESP_LOGE(TAG,"Message reçu correctement le code est %d",luminosite_data);
-        return true;
-    }
-    return false;
-}
 
 
 bool ProcessCapteurData(void) {
@@ -260,6 +252,8 @@ void task_calculateur(void *pvParameters) {
         bool retCapt = ProcessCapteurData();
         //ESP_LOGE(TAG,"nous sommes sortie de la fonctions");
         bool retEspNow = ProcessEspNowData(); 
+
+        bool retLuminosite = ProcessLuminositeData();
         //ESP_LOGE(TAG,"Passage hors des boucles");
         if (retCapt && retEspNow == false){
             cptRAZ ++;

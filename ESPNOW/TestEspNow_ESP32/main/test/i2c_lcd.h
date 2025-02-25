@@ -9,6 +9,27 @@
 //################################# PARAMETRES UTILE
 // affichage des distane
 #define DISTANCE_RANGE_PRINT 5
+
+//################################# Accès aux tableaux    #################################
+#define ALERTE_ATT_RALENTIR   0
+#define ALERTE_RALENTIR       1
+#define ALERTE_FREIN_URGENCE  2
+#define ALERTE_FREINAGE       3
+#define ALERTE_STOP           4
+#define ALERTE_DANGER         5
+#define ALERTE_DEP_D_NO       6
+#define ALERTE_TRAJEC_OK      7
+#define ALERTE_ATTENTION      8
+#define ALERTE_ANGLE_MORT_G   9
+#define ALERTE_ANGLE_MORT_D   10
+#define ALERTE_PRESENCE_AG    11
+#define ALERTE_PRESENCE_AD    12
+#define ALERTE_DEPASSEMENT    13
+#define ALERTE_IMPOSSIBLE     14
+#define ALERTE_DNPW           15
+#define ALERTE_GAUCHE_BLOQUE  16
+#define ALERTE_DROITE_BLOQUE  17
+
 //################################# MASQUAGE DES LIGNES   #################################
 //LCD 20x4
 #define LCD_20X4_L1 0b10000000

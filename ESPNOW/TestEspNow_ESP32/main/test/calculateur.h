@@ -18,6 +18,8 @@
 //DNPWN
 #define ESPNOW_DNPW_G 12
 #define ESPNOW_DNPW_D 14
+
+#define ESPNOW_FCW_HIGH 17
 #define ESPNOW_FCW_CRIT 19
 
 //Plein phare
