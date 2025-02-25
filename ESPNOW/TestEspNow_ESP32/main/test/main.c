@@ -1,6 +1,7 @@
 #include "anglemort.h"
 #include "calculateur.h"
 #include "i2c_lcd.h"
+#include "BH1750.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,5 +62,20 @@ void app_main() {
     }
 
     
+    if (xTaskCreate(sensor_task, "Sensor Task", 2048, NULL, 2, NULL) != pdPASS) {
+        ESP_LOGE(TAG,"Erreur à la création de la taches de capteur");
+        //return ESP_FAIL;
+    }
+    if (xTaskCreate(luminosity_task, "Luminosity Task", 2048, NULL, 6, NULL) != pdPASS) {
+        ESP_LOGE(TAG,"Erreur à la création de la taches de capteur");
+        //return ESP_FAIL;
+    }
+    ESP_LOGE(TAG,"Création réussi");
+    /*
+    if (xTaskCreate(display_task, "Display task", 3072, NULL, 3, NULL) != pdPASS) {
+        ESP_LOGE(TAG,"Erreur à la création de la taches d'affichage");
+        return ESP_FAIL;
+    }
+        */
     
 }
