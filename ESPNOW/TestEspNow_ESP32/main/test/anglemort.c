@@ -21,6 +21,9 @@ static const char *TAG = "ANGLEMORT";
 
 uint16_t global_distances[6] = {0, 0, 0, 0, 0, 0};
 
+static uint8_t av, ar, arg, ard, avg, avd;
+
+
 extern QueueHandle_t queueCapteur_rx; 
 
 void hc_sr04_init(hc_sr04_t *sensor) {
@@ -62,51 +65,55 @@ uint16_t measure_distance_cm(hc_sr04_t *sensor) {
     return distance_cm;
 }
 
-ALERT_DATA_FORMAT alert_code = CAPTEUR_NO_ERROR;
 
-void detect_alert(hc_sr04_t *capteurs) {
-    alert_code = CAPTEUR_NO_ERROR;
-    //Mesure des 6 capteurs
-    for (int i = 0; i < 6; i++) {
-        global_distances[i] = measure_distance_cm(&capteurs[i]);
+// Déclaration des variables globales pour éviter leur redéclaration à chaque boucle
+
+ALERT_DATA_FORMAT update_alert_code(uint16_t * global_distances, ALERT_DATA_FORMAT alert_code) {
+    // Mise à jour des variables (hors du while(true), mais exécutée à chaque appel)
+    arg = global_distances[CPT_ARG];
+    ard = global_distances[CPT_ARD];
+    av = global_distances[CPT_AV];
+    avg = global_distances[CPT_AVG];
+    avd = global_distances[CPT_AVD];
+    ar = global_distances[CPT_AR];
+
+    alert_code = CAPTEUR_NO_ERROR; // Valeur par défaut
+
+    // ⚠️ Freinage brusque EEBL (avant/arrière)
+    if (av <= ALERT_DISTANCE_30 && ar <= ALERT_DISTANCE_30) {
+        if (av > ALERT_DISTANCE_20 && ar > ALERT_DISTANCE_20) {
+            alert_code = CAPTEUR_EEBL_MID;
+        } else if (av > ALERT_DISTANCE_10 && ar > ALERT_DISTANCE_10) {
+            alert_code = CAPTEUR_EEBL_HIGH;
+        } else if (av > DIST_MIN_DETECT && ar > DIST_MIN_DETECT) {
+            alert_code = CAPTEUR_EEBL_CRIT;
+        }
     }
 
-    if (global_distances[CPT_AV] <= ALERT_DISTANCE_30 && global_distances[CPT_AV] > ALERT_DISTANCE_20 &&
-        global_distances[CPT_AR] <= ALERT_DISTANCE_30 && global_distances[CPT_AR] > ALERT_DISTANCE_20) {
-        alert_code = CAPTEUR_EEBL_MID;
-    } else if (global_distances[CPT_AV] <= ALERT_DISTANCE_20 && global_distances[CPT_AV] > ALERT_DISTANCE_10 &&
-               global_distances[CPT_AR] <= ALERT_DISTANCE_20 && global_distances[CPT_AR] > ALERT_DISTANCE_10) {
-        alert_code = CAPTEUR_EEBL_HIGH;
-    } else if (global_distances[CPT_AV] <= ALERT_DISTANCE_10 && global_distances[CPT_AV] > DIST_MIN_DETECT &&
-        global_distances[CPT_AR] <= ALERT_DISTANCE_10 && global_distances[CPT_AR] > DIST_MIN_DETECT) {
-        alert_code = CAPTEUR_EEBL_CRIT;
+    // ⚠️ Alerte collision frontale (FCW)
+    if (av <= ALERT_DISTANCE_30 && av > ALERT_DISTANCE_20) {
+        alert_code = CAPTEUR_FCW_HIGH;
+    } else if (av <= ALERT_DISTANCE_20) {
+        alert_code = CAPTEUR_FCW_CRIT;
     }
 
-    if (global_distances[CPT_ARG] <= ALERT_DISTANCE_30) {
+    // ⚠️ Détection des angles morts
+    if (arg <= ALERT_DISTANCE_30) {
         alert_code = CAPTEUR_BSW_GAUCHE;
     }
-    if (global_distances[CPT_ARD] <= ALERT_DISTANCE_30) {
+    if (ard <= ALERT_DISTANCE_30) {
         alert_code = CAPTEUR_BSW_DROITE;
     }
 
-    if (global_distances[CPT_ARD] <= ALERT_DISTANCE_30 && global_distances[CPT_AVG] <= ALERT_DISTANCE_30) {
+    // ⚠️ Détection de non-priorité (Danger croisement)
+    if (ard <= ALERT_DISTANCE_30 && avg <= ALERT_DISTANCE_30) {
         alert_code = CAPTEUR_DNPW_G;
-    }
-    if (global_distances[CPT_ARG] <= ALERT_DISTANCE_30 && global_distances[CPT_AVG] <= ALERT_DISTANCE_30) {
+    } else if (arg <= ALERT_DISTANCE_30 && avg <= ALERT_DISTANCE_30) {
         alert_code = CAPTEUR_DNPW_D;
     }
-    if (alert_code != CAPTEUR_NO_ERROR) {
-        if (queueCapteur_rx != NULL) {
-            if (xQueueSend(queueCapteur_rx, &alert_code, pdMS_TO_TICKS(200)) != pdPASS) {
-                ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
-            }
-            ESP_LOGI(TAG,"Le code renvoyé est :%d",alert_code);
-            //ESP_LOGI(TAG,"envoie d'une info");
-        } else {
-            ESP_LOGE("Queue", "queueCapteur_rx is NULL");
-        }   
-    }
+    return alert_code;
 }
+
 
 
 
@@ -119,14 +126,29 @@ void sensor_task(void *pvParameters) {
         {TRIGGER_GPIO_AVD, ECHO_GPIO_AVD},
         {TRIGGER_GPIO_AR, ECHO_GPIO_AR}  
     };
-
+    ALERT_DATA_FORMAT alert_code = CAPTEUR_NO_ERROR;
     ESP_LOGI(TAG, "Initialisation des capteurs");
     for (int i = 0; i < CAPTEUR_NUMBER; i++) {
         hc_sr04_init(&capteurs[i]);
     }
 
     while (1) {
-        detect_alert(capteurs);  // Passage correct du tableau
+        for (int i = 0; i < 6; i++) {
+            global_distances[i] = measure_distance_cm(&capteurs[i]);
+        }
+        alert_code = update_alert_code(global_distances,alert_code);
+        if (alert_code != CAPTEUR_NO_ERROR) {
+            if (queueCapteur_rx != NULL) {
+                if (xQueueSend(queueCapteur_rx, &alert_code, pdMS_TO_TICKS(200)) != pdPASS) {
+                    ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
+                }
+                ESP_LOGI(TAG,"Le code renvoyé est :%d",alert_code);
+                //ESP_LOGI(TAG,"envoie d'une info");
+            } else {
+                ESP_LOGE("Queue", "queueCapteur_rx is NULL");
+            }   
+        }
+        // Passage correct du tableau
 
         vTaskDelay(pdMS_TO_TICKS(200));  // Rafraîchissement plus fréquent (modifiable)
     }
