@@ -3,6 +3,23 @@
 
 #include <driver/gpio.h>
 
+#define ALERT_DISTANCE_30 30 
+#define ALERT_DISTANCE_20 20 
+#define ALERT_DISTANCE_10 10
+
+#define DIST_MIN_DETECT 2
+
+
+#define CPT_ARG 0
+#define CPT_ARD 1
+#define CPT_AV 2
+#define CPT_AVG 3
+#define CPT_AVD 4
+#define CPT_AR 5
+
+
+
+
 // Définition des broches GPIO pour les capteurs HC-SR04
 #define TRIGGER_GPIO_ARG  GPIO_NUM_4   // Capteur Arrière Gauche
 #define ECHO_GPIO_ARG     GPIO_NUM_16

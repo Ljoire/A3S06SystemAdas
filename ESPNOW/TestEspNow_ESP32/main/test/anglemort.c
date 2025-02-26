@@ -13,6 +13,10 @@
 #define ALERT_DISTANCE_20 20 
 #define ALERT_DISTANCE_10 10
 
+#define DIST_MIN_DETECT 2
+
+
+
 static const char *TAG = "ANGLEMORT";
 
 uint16_t global_distances[6] = {0, 0, 0, 0, 0, 0};
@@ -61,41 +65,42 @@ uint16_t measure_distance_cm(hc_sr04_t *sensor) {
 ALERT_DATA_FORMAT alert_code = CAPTEUR_NO_ERROR;
 
 void detect_alert(hc_sr04_t *capteurs) {
-
+    alert_code = CAPTEUR_NO_ERROR;
+    //Mesure des 6 capteurs
     for (int i = 0; i < 6; i++) {
         global_distances[i] = measure_distance_cm(&capteurs[i]);
     }
 
-    if (global_distances[2] <= ALERT_DISTANCE_30 && global_distances[2] > ALERT_DISTANCE_20 &&
-        global_distances[5] <= ALERT_DISTANCE_30 && global_distances[5] > ALERT_DISTANCE_20) {
-        alert_code = 1;
-    } else if (global_distances[2] <= ALERT_DISTANCE_20 && global_distances[2] > ALERT_DISTANCE_10 &&
-               global_distances[5] <= ALERT_DISTANCE_20 && global_distances[5] > ALERT_DISTANCE_10) {
-        alert_code = 3;
-    } else if (global_distances[2] <= ALERT_DISTANCE_10 && global_distances[2] > 2 &&
-        global_distances[5] <= ALERT_DISTANCE_10 && global_distances[5] > 2) {
-        alert_code = 5;
+    if (global_distances[CPT_AV] <= ALERT_DISTANCE_30 && global_distances[CPT_AV] > ALERT_DISTANCE_20 &&
+        global_distances[CPT_AR] <= ALERT_DISTANCE_30 && global_distances[CPT_AR] > ALERT_DISTANCE_20) {
+        alert_code = CAPTEUR_EEBL_MID;
+    } else if (global_distances[CPT_AV] <= ALERT_DISTANCE_20 && global_distances[CPT_AV] > ALERT_DISTANCE_10 &&
+               global_distances[CPT_AR] <= ALERT_DISTANCE_20 && global_distances[CPT_AR] > ALERT_DISTANCE_10) {
+        alert_code = CAPTEUR_EEBL_HIGH;
+    } else if (global_distances[CPT_AV] <= ALERT_DISTANCE_10 && global_distances[CPT_AV] > DIST_MIN_DETECT &&
+        global_distances[CPT_AR] <= ALERT_DISTANCE_10 && global_distances[CPT_AR] > DIST_MIN_DETECT) {
+        alert_code = CAPTEUR_EEBL_CRIT;
     }
 
-    if (global_distances[0] <= ALERT_DISTANCE_30) {
-        alert_code = 7;
+    if (global_distances[CPT_ARG] <= ALERT_DISTANCE_30) {
+        alert_code = CAPTEUR_BSW_GAUCHE;
     }
-    if (global_distances[1] <= ALERT_DISTANCE_30) {
-        alert_code = 9;
+    if (global_distances[CPT_ARD] <= ALERT_DISTANCE_30) {
+        alert_code = CAPTEUR_BSW_DROITE;
     }
 
-    if (global_distances[1] <= ALERT_DISTANCE_30 && global_distances[3] <= ALERT_DISTANCE_30) {
-        alert_code = 11;
+    if (global_distances[CPT_ARD] <= ALERT_DISTANCE_30 && global_distances[CPT_AVG] <= ALERT_DISTANCE_30) {
+        alert_code = CAPTEUR_DNPW_G;
     }
-    if (global_distances[0] <= ALERT_DISTANCE_30 && global_distances[3] <= ALERT_DISTANCE_30) {
-        alert_code = 13;
+    if (global_distances[CPT_ARG] <= ALERT_DISTANCE_30 && global_distances[CPT_AVG] <= ALERT_DISTANCE_30) {
+        alert_code = CAPTEUR_DNPW_D;
     }
-    ESP_LOGI(TAG,"Le code renvoyé est :%d",alert_code);
     if (alert_code != CAPTEUR_NO_ERROR) {
         if (queueCapteur_rx != NULL) {
             if (xQueueSend(queueCapteur_rx, &alert_code, pdMS_TO_TICKS(200)) != pdPASS) {
                 ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
             }
+            ESP_LOGI(TAG,"Le code renvoyé est :%d",alert_code);
             //ESP_LOGI(TAG,"envoie d'une info");
         } else {
             ESP_LOGE("Queue", "queueCapteur_rx is NULL");
@@ -106,7 +111,7 @@ void detect_alert(hc_sr04_t *capteurs) {
 
 
 void sensor_task(void *pvParameters) {
-    hc_sr04_t toto[] = {
+    static hc_sr04_t capteurs[] = {
         {TRIGGER_GPIO_ARG, ECHO_GPIO_ARG},
         {TRIGGER_GPIO_ARD, ECHO_GPIO_ARD},
         {TRIGGER_GPIO_AV, ECHO_GPIO_AV},
@@ -115,15 +120,14 @@ void sensor_task(void *pvParameters) {
         {TRIGGER_GPIO_AR, ECHO_GPIO_AR}  
     };
 
-    ESP_LOGI(TAG,"Initialisation des capteur");
+    ESP_LOGI(TAG, "Initialisation des capteurs");
     for (int i = 0; i < CAPTEUR_NUMBER; i++) {
-        hc_sr04_init(&toto[i]);
+        hc_sr04_init(&capteurs[i]);
     }
+
     while (1) {
-        //ESP_LOGE(TAG,"Prend la main");
-        detect_alert(&toto);
-        //ESP_LOGE(TAG,"Rend la main");
-        vTaskDelay(pdMS_TO_TICKS(1000)); 
-        //ESP_LOGE(TAG,"Reprend la main");
+        detect_alert(capteurs);  // Passage correct du tableau
+
+        vTaskDelay(pdMS_TO_TICKS(200));  // Rafraîchissement plus fréquent (modifiable)
     }
 }
