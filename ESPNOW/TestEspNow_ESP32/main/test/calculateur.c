@@ -112,14 +112,14 @@ bool ProcessEspNowData(void) {
             case ESPNOW_DNPW_G:
             case ESPNOW_DNPW_D:
                 DatatMoteur = SERVO_CENTRE;
-                if (xQueueSend(queueMoteur_tx, &DatatMoteur, portMAX_DELAY) == pdTRUE) {
+                if (xQueueSend(queueMoteur_tx, &DatatMoteur, pdMS_TO_TICKS(100)) == pdTRUE) {
                     vTaskDelay(pdMS_TO_TICKS(300));
                 }
                 break;
 
             case ESPNOW_FCW_CRIT:
                 DatatMoteur = MOTEUR_AVANT_LENT;
-                if (xQueueSend(queueMoteur_tx, &DatatMoteur, portMAX_DELAY) == pdTRUE) {
+                if (xQueueSend(queueMoteur_tx, &DatatMoteur, pdMS_TO_TICKS(100)) == pdTRUE) {
                     vTaskDelay(pdMS_TO_TICKS(300));
                 }
                 break;
@@ -130,13 +130,13 @@ bool ProcessEspNowData(void) {
 
         // Effectuer un ET logique avec 0xC0 pour extraire les 2 bits de poids fort
         uint16_t lcd_alert = espnow_data;
-        if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
+        if (xQueueSend(queueLCD_tx, &lcd_alert, pdMS_TO_TICKS(100)) == pdTRUE) {
             vTaskDelay(pdMS_TO_TICKS(300));
         }
 
         return true; // Une donnée a été traitée
     }
-
+    
     return false; // Aucune donnée à traiter
 }
 
@@ -156,14 +156,14 @@ bool ProcessCapteurData(void) {
         case CAPTEUR_EEBL_HIGH:
             moteur_data = MOTEUR_AVANT_LENT;
             //Mettre SONNERIE_INTERMEDIAIRE
-            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+            if (xQueueSend(queueMoteur_tx, &moteur_data, pdMS_TO_TICKS(100)) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,pdMS_TO_TICKS(100)) == pdTRUE) {
                 vTaskDelay(pdMS_TO_TICKS(300));
             }
             break;
         case CAPTEUR_EEBL_CRIT:
             //Mettre SONNERIE_FORT
             moteur_data = MOTEUR_STOP;
-            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,portMAX_DELAY) == pdTRUE) {
+            if (xQueueSend(queueMoteur_tx, &moteur_data, pdMS_TO_TICKS(100)) == pdTRUE && xQueueSend(queueESPNOW_tx,espnow_data,pdMS_TO_TICKS(100)) == pdTRUE) {
                 vTaskDelay(pdMS_TO_TICKS(300));
             }
             break;
@@ -188,14 +188,14 @@ bool ProcessCapteurData(void) {
         case CAPTEUR_FCW_HIGH:
             //mettre sonnerie low 
             moteur_data = MOTEUR_AVANT_LENT;
-            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,&espnow_data,portMAX_DELAY) == pdTRUE) {
+            if (xQueueSend(queueMoteur_tx, &moteur_data, pdMS_TO_TICKS(100)) == pdTRUE && xQueueSend(queueESPNOW_tx,&espnow_data,pdMS_TO_TICKS(100)) == pdTRUE) {
                 vTaskDelay(pdMS_TO_TICKS(300));
             }
             break;
         case CAPTEUR_FCW_CRIT:
             //mettre SONNERIE_intermediaire
             moteur_data = MOTEUR_STOP;
-            if (xQueueSend(queueMoteur_tx, &moteur_data, portMAX_DELAY) == pdTRUE && xQueueSend(queueESPNOW_tx,&espnow_data,portMAX_DELAY) == pdTRUE) {
+            if (xQueueSend(queueMoteur_tx, &moteur_data, pdMS_TO_TICKS(100)) == pdTRUE && xQueueSend(queueESPNOW_tx,&espnow_data,pdMS_TO_TICKS(100)) == pdTRUE) {
                 vTaskDelay(pdMS_TO_TICKS(300));
             }
             break;
@@ -205,12 +205,13 @@ bool ProcessCapteurData(void) {
             break;
         }
         uint16_t lcd_alert = capteur_data;
-        if (xQueueSend(queueLCD_tx, &lcd_alert, portMAX_DELAY) == pdTRUE) {
+        if (xQueueSend(queueLCD_tx, &lcd_alert, pdMS_TO_TICKS(100)) == pdTRUE) {
                 //vTaskDelay(pdTICKS_TO_MS(300));
             }
         //ESP_LOGE(TAG,"envoie du code dans la tache LCD");
         return true;
     }
+    ESP_LOGE(TAG,"rien dans le capteur");
     return false;
 }
         

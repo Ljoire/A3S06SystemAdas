@@ -51,7 +51,7 @@ void luminosity_task(void *pvParameters) {
     //bh1750_init();
     while (1) {
         uint16_t lux = get_luminosity();
-        ESP_LOGI(TAG, "Luminosité mesurée: %u lux", lux);
+        //ESP_LOGI(TAG, "Luminosité mesurée: %u lux", lux);
         
         uint8_t alert = 0;
         if (lux >= HIGH_BEAM_THRESHOLD) {

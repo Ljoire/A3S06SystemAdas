@@ -126,20 +126,21 @@ void sensor_task(void *pvParameters) {
     for (int i = 0; i < CAPTEUR_NUMBER; i++) {
         hc_sr04_init(&capteurs[i]);
     }
+    uint8_t turn = 0;
 
     while (1) {
         for (int i = 0; i < CAPTEUR_NUMBER; i++) {
             global_distances[i] = measure_distance_cm(&capteurs[i]);
-            if(global_distances[i] == -1){
+            /*if(global_distances[i] == -1){
                 ESP_LOGE(TAG,"le capteur %d est en timeout par la non-mise à 0 de la pin echo",i);
             }
             if(global_distances[i] == -2){
                 ESP_LOGE(TAG,"le capteur %d est en timeout par la non-mise à 1 de la pin echo",i);
-            }
+            }*/
         }
         alert_code = update_alert_code(global_distances,alert_code);
-        if (alert_code != CAPTEUR_NO_ERROR) {
-            if (queueCapteur_rx != NULL) {
+        if (alert_code != CAPTEUR_NO_ERROR && turn >= 3) {
+            if (queueCapteur_rx != NULL && turn) {
                 if (xQueueSend(queueCapteur_rx, &alert_code, pdMS_TO_TICKS(200)) != pdPASS) {
                     ESP_LOGE("Queue", "Failed to send alert_code to queueCapteur_rx");
                 }
@@ -147,10 +148,12 @@ void sensor_task(void *pvParameters) {
                 //ESP_LOGI(TAG,"envoie d'une info");
             } else {
                 ESP_LOGE("Queue", "queueCapteur_rx is NULL");
-            }   
+            }
+            turn = 0;   
         }
+        alert_code = CAPTEUR_NO_ERROR;
         // Passage correct du tableau
-
+        turn++;
         vTaskDelay(pdMS_TO_TICKS(200));  // Rafraîchissement plus fréquent (modifiable)
     }
 }
