@@ -227,122 +227,123 @@ void display_task(void *pvParameters) {
                 case CAPTEUR_EEBL_MID:
                 case CAPTEUR_EEBL_HIGH:
                 case CAPTEUR_FCW_HIGH:
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,4);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_4,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_ATT_RALENTIR]);
                     MaskLine = MaskLine + LCD_20X4_L4;
                     break;
                 case ESPNOW_EEBL_MID:
                 case ESPNOW_EEBL_HIGH:
 
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,4);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_4,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_ATT_RALENTIR]);
                     MaskLine = MaskLine + LCD_20X4_L4;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,1);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_16x2,LCD_I2C_ADDR,tableAlerte[ALERTE_RALENTIR]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
                 case CAPTEUR_EEBL_CRIT:
                 case ESPNOW_EEBL_CRIT:
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,4);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_4,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_FREIN_URGENCE]);
                     MaskLine = MaskLine + LCD_20X4_L4;
                     break;
                 case CAPTEUR_BSW_GAUCHE:
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,1,0);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_2,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_ANGLE_MORT_G]);
                     MaskLine = MaskLine + LCD_20X4_L2;
                     break;
                 case ESPNOW_BSW_G:
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,2);
-                    lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_PRESENCE_AG]);
-                    MaskLine = MaskLine + LCD_20X4_L2;        
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
+                    lcd_print(PortI2c_16x2,LCD_I2C_ADDR,tableAlerte[ALERTE_PRESENCE_AG]);
+                    MaskLine = MaskLine + LCD_16X2_L1;        
                     break;  
                 case CAPTEUR_BSW_DROITE:
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,2);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_2,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_ANGLE_MORT_D]);
                     MaskLine = MaskLine + LCD_20X4_L2;
                     break;
                 case ESPNOW_BSW_D:
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,2);
-                    lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_PRESENCE_AD]);
-                    MaskLine = MaskLine + LCD_20X4_L2;
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
+                    lcd_print(PortI2c_16x2,LCD_I2C_ADDR,tableAlerte[ALERTE_PRESENCE_AD]);
+                    MaskLine = MaskLine + LCD_16X2_L1;
                     break;
                 case CAPTEUR_DNPW_G:
                     ESP_LOGE(TAG,"Dans le case DNPW_G");                                                     
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,1,0);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_DEPASSEMENT]);
                     MaskLine = MaskLine + LCD_20X4_L1;
                     
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,2,0);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_2,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_IMPOSSIBLE]);
                     MaskLine = MaskLine + LCD_20X4_L2;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,0);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DNPW]);
                     MaskLine = MaskLine + LCD_16X2_L1;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,1,0);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_GAUCHE_BLOQUE]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
                 case ESPNOW_DNPW_G:
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,0);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DNPW]);
                     MaskLine = MaskLine + LCD_16X2_L1;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,1);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_2,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_GAUCHE_BLOQUE]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
                 case CAPTEUR_DNPW_D:   
                     ESP_LOGE(TAG,"Dans le case DNPW_D");                                       
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,1,0);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_DEPASSEMENT]);
                     MaskLine = MaskLine + LCD_20X4_L1;
                     
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,2,0);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_2,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_IMPOSSIBLE]);
                     MaskLine = MaskLine + LCD_20X4_L2;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,0);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DNPW]);
                     MaskLine = MaskLine + LCD_16X2_L1;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,1,0);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_2,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DROITE_BLOQUE]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
                 case ESPNOW_DNPW_D:
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,0);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DNPW]);
                     MaskLine = MaskLine + LCD_16X2_L1;
 
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,1);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_2,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DROITE_BLOQUE]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
                 //Le code 15 (FCW mid) n'a pas été implémenté car il faut le clarifier
                 case ESPNOW_FCW_HIGH:
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,1);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_16x2,LCD_I2C_ADDR,tableAlerte[ALERTE_RALENTIR]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
                 case CAPTEUR_FCW_CRIT:
-                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,0,4);
+                    lcd_set_cursor(PortI2c_20x4,LCD2_I2C_ADDR,LINE_4,COL_0);
                     lcd_print(PortI2c_20x4,LCD2_I2C_ADDR,tableAlerte[ALERTE_FREINAGE]);
                     MaskLine = MaskLine + LCD_20X4_L4;
                     
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,1);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_16x2,LCD_I2C_ADDR,tableAlerte[ALERTE_STOP]);
                     MaskLine = MaskLine + LCD_16X2_L2;
                     break;
                 case ESPNOW_FCW_CRIT:
-                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,0,0);
+                    lcd_set_cursor(PortI2c_16x2,LCD_I2C_ADDR,LINE_1,COL_0);
                     lcd_print(PortI2c_20x4,LCD_I2C_ADDR,tableAlerte[ALERTE_DANGER]);
                     MaskLine = MaskLine + LCD_16X2_L1; 
                     break;                   
                 default:
+                    ESP_LOGE(TAG,"Dans aucun case");
                     break;
                 }
                 vTaskDelay(pdMS_TO_TICKS(200));

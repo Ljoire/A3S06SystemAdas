@@ -31,6 +31,11 @@
 #define ALERTE_DROITE_BLOQUE  17
 
 //################################# MASQUAGE DES LIGNES   #################################
+#define COL_0 0
+#define LINE_1 0
+#define LINE_2 1
+#define LINE_3 2
+#define LINE_4 3
 //LCD 20x4
 #define LCD_20X4_L1 0b10000000
 #define LCD_20X4_L2 0b01000000
