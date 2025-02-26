@@ -3,6 +3,9 @@
 #include "freertos/queue.h"
 #include <string.h>
 #include "esp_log.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 
     /***** @brief Liste des entrée ****/
     /** @brief ESPNOW **/

@@ -1,25 +1,16 @@
 #include "anglemort.h"
-#include "calculateur.h"
+
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <rom/ets_sys.h>
 #include <math.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/task.h"
-#include "esp_log.h"
 
-#define ALERT_DISTANCE_30 30 
-#define ALERT_DISTANCE_20 20 
-#define ALERT_DISTANCE_10 10
-
-#define DIST_MIN_DETECT 2
 
 
 
 static const char *TAG = "ANGLEMORT";
 
-uint16_t global_distances[6] = {0, 0, 0, 0, 0, 0};
+int16_t global_distances[6] = {0, 0, 0, 0, 0, 0};
 
 static uint8_t av, ar, arg, ard, avg, avd;
 
@@ -44,31 +35,31 @@ void hc_sr04_init(hc_sr04_t *sensor) {
 
 
 
-uint16_t measure_distance_cm(hc_sr04_t *sensor) {
+int16_t measure_distance_cm(hc_sr04_t *sensor) {
     gpio_set_level(sensor->trigger_pin, 1);
     ets_delay_us(10);
     gpio_set_level(sensor->trigger_pin, 0);
 
     uint64_t timeout = esp_timer_get_time() + 30000;
     while (gpio_get_level(sensor->echo_pin) == 0) {
-        if (esp_timer_get_time() > timeout) return 0;
+        if (esp_timer_get_time() > timeout) return -1;
     }
     uint64_t echo_start = esp_timer_get_time();
 
     while (gpio_get_level(sensor->echo_pin) == 1) {
-        if (esp_timer_get_time() > timeout) return 0;
+        if (esp_timer_get_time() > timeout) return -2;
     }
     uint64_t echo_end = esp_timer_get_time();
 
     uint16_t distance_cm = (uint16_t)((echo_end - echo_start) / 58.0);
-    if (distance_cm < 2 || distance_cm > 400) return 0;
+    if (distance_cm < 2 || distance_cm > 400) return -3;
     return distance_cm;
 }
 
 
 // Déclaration des variables globales pour éviter leur redéclaration à chaque boucle
-
-ALERT_DATA_FORMAT update_alert_code(uint16_t * global_distances, ALERT_DATA_FORMAT alert_code) {
+//A REVOIR 
+ALERT_DATA_FORMAT update_alert_code(int16_t * global_distances, ALERT_DATA_FORMAT alert_code) {
     // Mise à jour des variables (hors du while(true), mais exécutée à chaque appel)
     arg = global_distances[CPT_ARG];
     ard = global_distances[CPT_ARD];
@@ -137,8 +128,14 @@ void sensor_task(void *pvParameters) {
     }
 
     while (1) {
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < CAPTEUR_NUMBER; i++) {
             global_distances[i] = measure_distance_cm(&capteurs[i]);
+            if(global_distances[i] == -1){
+                ESP_LOGE(TAG,"le capteur %d est en timeout par la non-mise à 0 de la pin echo",i);
+            }
+            if(global_distances[i] == -2){
+                ESP_LOGE(TAG,"le capteur %d est en timeout par la non-mise à 1 de la pin echo",i);
+            }
         }
         alert_code = update_alert_code(global_distances,alert_code);
         if (alert_code != CAPTEUR_NO_ERROR) {

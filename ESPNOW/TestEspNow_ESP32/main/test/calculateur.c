@@ -12,8 +12,7 @@
  * 
  */
 #include "calculateur.h"
-#include <stdio.h>
-#include <stdlib.h>
+
 
 static const char *TAG = "CALCULATEUR";
 /**
