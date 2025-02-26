@@ -12,7 +12,7 @@ static const char *TAG = "ANGLEMORT";
 
 int16_t global_distances[6] = {0, 0, 0, 0, 0, 0};
 
-static uint8_t av, ar, arg, ard, avg, avd;
+uint8_t av, ar, arg, ard, avg, avd;
 
 
 extern QueueHandle_t queueCapteur_rx; 

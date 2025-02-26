@@ -211,7 +211,7 @@ bool ProcessCapteurData(void) {
         //ESP_LOGE(TAG,"envoie du code dans la tache LCD");
         return true;
     }
-    ESP_LOGE(TAG,"rien dans le capteur");
+
     return false;
 }
         
