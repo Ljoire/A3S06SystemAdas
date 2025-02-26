@@ -79,40 +79,44 @@ ALERT_DATA_FORMAT update_alert_code(uint16_t * global_distances, ALERT_DATA_FORM
 
     alert_code = CAPTEUR_NO_ERROR; // Valeur par défaut
 
-    // ⚠️ Freinage brusque EEBL (avant/arrière)
+    // 1️⃣ ⚠️ Alerte collision frontale (FCW) - PRIORITÉ MAXIMALE
+    if (av <= ALERT_DISTANCE_20) {
+        return CAPTEUR_FCW_CRIT;
+    } else if (av <= ALERT_DISTANCE_30) {
+        return CAPTEUR_FCW_HIGH;
+    }
+
+    // 2️⃣ ⚠️ Freinage brusque EEBL (avant/arrière)
     if (av <= ALERT_DISTANCE_30 && ar <= ALERT_DISTANCE_30) {
         if (av > ALERT_DISTANCE_20 && ar > ALERT_DISTANCE_20) {
-            alert_code = CAPTEUR_EEBL_MID;
+            return CAPTEUR_EEBL_MID;
         } else if (av > ALERT_DISTANCE_10 && ar > ALERT_DISTANCE_10) {
-            alert_code = CAPTEUR_EEBL_HIGH;
+            return CAPTEUR_EEBL_HIGH;
         } else if (av > DIST_MIN_DETECT && ar > DIST_MIN_DETECT) {
-            alert_code = CAPTEUR_EEBL_CRIT;
+            return CAPTEUR_EEBL_CRIT;
         }
     }
 
-    // ⚠️ Alerte collision frontale (FCW)
-    if (av <= ALERT_DISTANCE_30 && av > ALERT_DISTANCE_20) {
-        alert_code = CAPTEUR_FCW_HIGH;
-    } else if (av <= ALERT_DISTANCE_20) {
-        alert_code = CAPTEUR_FCW_CRIT;
+    // 3️⃣ ⚠️ Détection de non-priorité (DNPW) - DANGER CROISEMENT
+    if ((ard <= ALERT_DISTANCE_30 && avg <= ALERT_DISTANCE_30)) {
+        return CAPTEUR_DNPW_G;
+    }
+    if ((arg <= ALERT_DISTANCE_30 && avg <= ALERT_DISTANCE_30)) {
+        return CAPTEUR_DNPW_D;
     }
 
-    // ⚠️ Détection des angles morts
+    // 4️⃣ ⚠️ Détection des angles morts (BSW)
     if (arg <= ALERT_DISTANCE_30) {
-        alert_code = CAPTEUR_BSW_GAUCHE;
+        return CAPTEUR_BSW_GAUCHE;
     }
     if (ard <= ALERT_DISTANCE_30) {
-        alert_code = CAPTEUR_BSW_DROITE;
+        return CAPTEUR_BSW_DROITE;
     }
 
-    // ⚠️ Détection de non-priorité (Danger croisement)
-    if (ard <= ALERT_DISTANCE_30 && avg <= ALERT_DISTANCE_30) {
-        alert_code = CAPTEUR_DNPW_G;
-    } else if (arg <= ALERT_DISTANCE_30 && avg <= ALERT_DISTANCE_30) {
-        alert_code = CAPTEUR_DNPW_D;
-    }
+    // Aucune alerte détectée
     return alert_code;
 }
+
 
 
 
